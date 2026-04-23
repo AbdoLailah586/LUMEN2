@@ -3,9 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getTrainingJobs, getTrainingResults, getModel, downloadModel, exportCode } from "../services/api";
 import Plot from 'react-plotly.js';
 import { 
-    Trophy, FileText, Download, Code, ArrowLeft, Loader2, 
-    AlertCircle, BarChart, Activity, Layers, Target, ShieldCheck
+    Trophy, Download, Code, Loader2, 
+    BarChart, Activity, Layers, Target, ShieldCheck
 } from "lucide-react";
+
 
 export const ResultsPage: React.FC = () => {
     const { jobId: urlJobId } = useParams<{ jobId: string }>();
@@ -16,7 +17,7 @@ export const ResultsPage: React.FC = () => {
     const [results, setResults] = useState<any>(null);
     const [model, setModel] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+
 
     useEffect(() => {
         fetchJobs();
@@ -43,7 +44,6 @@ export const ResultsPage: React.FC = () => {
 
     const loadResults = async (id: string) => {
         setLoading(true);
-        setError(null);
         try {
             const res = await getTrainingResults(id);
             setResults(res);
@@ -52,11 +52,12 @@ export const ResultsPage: React.FC = () => {
                 setModel(modelData);
             }
         } catch (err) {
-            setError("Failed to load training results.");
+            console.error("Failed to load results:", err);
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleDownloadModel = async () => {
         if (!model) return;

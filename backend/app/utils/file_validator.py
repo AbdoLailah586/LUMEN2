@@ -6,7 +6,11 @@ import magic # python-magic for true mime detection
 from fastapi import UploadFile, HTTPException
 import csv
 
-ALLOWED_MIMES = os.getenv("ALLOWED_MIME_TYPES", "text/csv,application/json,image/jpeg,image/png").split(",")
+ALLOWED_MIMES = os.getenv(
+    "ALLOWED_MIME_TYPES", 
+    "text/csv,application/json,image/jpeg,image/png,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/octet-stream"
+).split(",")
+
 
 # Typical malicious excel payload prefixes
 CSV_INJECTION_CHARS = ('=', '+', '-', '@', '\t', '\r')

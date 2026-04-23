@@ -2,14 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getDatasets, getDataset, getDatasetProfile, getDatasetEda, downloadDataset } from "../services/api";
 import { 
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+    BarChart, Bar, Tooltip, ResponsiveContainer, 
     Cell, PieChart, Pie
 } from 'recharts';
+
 import Plot from 'react-plotly.js';
 import { 
-    LayoutDashboard, Database, Download, ArrowRight, Loader2, 
+    Database, Download, ArrowRight, Loader2, 
     AlertCircle, BarChart3, Activity, Layers, Info
 } from "lucide-react";
+
 
 export const DashboardPage: React.FC = () => {
     const { datasetId } = useParams<{ datasetId: string }>();
@@ -20,7 +22,7 @@ export const DashboardPage: React.FC = () => {
     const [profile, setProfile] = useState<any>(null);
     const [eda, setEda] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+
 
     useEffect(() => {
         fetchDatasets();
@@ -46,7 +48,6 @@ export const DashboardPage: React.FC = () => {
 
     const loadDatasetData = async (id: string) => {
         setLoading(true);
-        setError(null);
         try {
             const [dsData, profileData, edaData] = await Promise.all([
                 getDataset(id),
@@ -58,11 +59,11 @@ export const DashboardPage: React.FC = () => {
             setEda(edaData);
         } catch (err: any) {
             console.error("Failed to load dashboard data:", err);
-            setError("Could not load dataset details. It might be missing or corrupted.");
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleDatasetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const id = e.target.value;
@@ -160,10 +161,17 @@ export const DashboardPage: React.FC = () => {
                     </button>
                     <button 
                         onClick={() => navigate(`/cleaning/${datasetId}`)}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/5 rounded-xl transition-all"
+                    >
+                        Clean Data
+                    </button>
+                    <button 
+                        onClick={() => navigate(`/training/${datasetId}`)}
                         className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all transform hover:scale-105"
                     >
-                        Clean Data <ArrowRight size={18} />
+                        Train Model <ArrowRight size={18} />
                     </button>
+
                 </div>
             </div>
 
@@ -236,7 +244,8 @@ export const DashboardPage: React.FC = () => {
                                             {col.histogram && (
                                                 <div className="h-8 w-24">
                                                     <ResponsiveContainer width="100%" height="100%">
-                                                        <BarChart data={col.histogram.counts.map((c: any, i: number) => ({ val: c }))}>
+                                                        <BarChart data={col.histogram.counts.map((c: any) => ({ val: c }))}>
+
                                                             <Bar dataKey="val" fill={col.is_numeric ? "#3b82f6" : "#a855f7"} radius={[2, 2, 0, 0]} />
                                                         </BarChart>
                                                     </ResponsiveContainer>

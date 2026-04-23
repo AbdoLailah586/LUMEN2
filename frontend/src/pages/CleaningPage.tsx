@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getDatasets, getDataset, getDatasetPreview, applyCleaning } from "../services/api";
 import { 
-    Eraser, Database, ArrowRight, Loader2, AlertCircle, 
-    Table as TableIcon, Check, RefreshCcw, Filter, ChevronLeft, ChevronRight, Settings2
+    Eraser, Database, Check, Loader2, AlertCircle, 
+    Table as TableIcon, RefreshCcw, Filter, ChevronLeft, ChevronRight, Settings2, ArrowRight
 } from "lucide-react";
 
 export const CleaningPage: React.FC = () => {
@@ -13,9 +13,7 @@ export const CleaningPage: React.FC = () => {
     const [datasets, setDatasets] = useState<any[]>([]);
     const [selectedDataset, setSelectedDataset] = useState<any>(null);
     const [preview, setPreview] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
     const [applying, setApplying] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     
     // Cleaning Config
     const [cleaningConfig, setCleaningConfig] = useState<any>({
@@ -48,8 +46,6 @@ export const CleaningPage: React.FC = () => {
     };
 
     const loadDataset = async (id: string) => {
-        setLoading(true);
-        setError(null);
         try {
             const [ds, prev] = await Promise.all([
                 getDataset(id),
@@ -65,11 +61,10 @@ export const CleaningPage: React.FC = () => {
             });
             setColumnStrategies(initialStrats);
         } catch (err) {
-            setError("Failed to load dataset preview.");
-        } finally {
-            setLoading(false);
+            console.error("Failed to load dataset preview:", err);
         }
     };
+
 
     const handleApplyCleaning = async () => {
         if (!datasetId) return;
@@ -129,7 +124,7 @@ export const CleaningPage: React.FC = () => {
                         <div className="p-2 bg-indigo-500 rounded-lg shadow-[0_0_15px_rgba(99,102,241,0.5)]">
                             <Eraser size={24} className="text-white" />
                         </div>
-                        <h1 className="text-3xl font-bold text-white">Data Sweeping</h1>
+                        <h1 className="text-3xl font-bold text-white">Data Sanitization</h1>
                     </div>
                     <p className="text-slate-400 font-medium">
                         {selectedDataset?.original_filename || 'Loading dataset...'}
@@ -141,14 +136,20 @@ export const CleaningPage: React.FC = () => {
                         onClick={() => navigate(`/dashboard/${datasetId}`)}
                         className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/5 rounded-xl transition-all"
                     >
-                        Back to Dashboard
+                        Dashboard
                     </button>
                     <button 
                         onClick={handleApplyCleaning}
                         disabled={applying}
-                        className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all transform hover:scale-105 disabled:opacity-50 disabled:scale-100"
+                        className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-50"
                     >
                         {applying ? <Loader2 size={18} className="animate-spin" /> : <><Check size={18} /> Apply Cleaning</>}
+                    </button>
+                    <button 
+                        onClick={() => navigate(`/training/${datasetId}`)}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all transform hover:scale-105"
+                    >
+                        Train Model <ArrowRight size={18} />
                     </button>
                 </div>
             </div>

@@ -3,8 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getDatasets, getDatasetPreview, startTraining, getTrainingJobStatus, getTrainingResults } from "../services/api";
 import { 
     Cpu, Database, Play, Loader2, CheckCircle2, AlertCircle, 
-    ArrowRight, Settings, BarChart, Activity, Layers, Target, Clock
+    Settings, Activity, Target, Clock
 } from "lucide-react";
+
 
 export const TrainingPage: React.FC = () => {
     const { datasetId: urlDatasetId } = useParams<{ datasetId: string }>();
@@ -13,7 +14,7 @@ export const TrainingPage: React.FC = () => {
     const [datasets, setDatasets] = useState<any[]>([]);
     const [selectedDatasetId, setSelectedDatasetId] = useState<string>(urlDatasetId || "");
     const [preview, setPreview] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
+
     
     // Training Config
     const [targetColumn, setTargetColumn] = useState<string>("");
@@ -79,7 +80,6 @@ export const TrainingPage: React.FC = () => {
     };
 
     const loadPreview = async (id: string) => {
-        setLoading(true);
         try {
             const data = await getDatasetPreview(id);
             setPreview(data);
@@ -89,10 +89,9 @@ export const TrainingPage: React.FC = () => {
             }
         } catch (err) {
             console.error("Failed to load preview:", err);
-        } finally {
-            setLoading(false);
         }
     };
+
 
     const handleStartTraining = async () => {
         if (!selectedDatasetId || !targetColumn || selectedModels.length === 0) {
