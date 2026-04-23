@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lumen-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: lumen-api
+  template:
+    metadata:
+      labels:
+        app: lumen-api
+    spec:
+      containers:
+      - name: lumen-api
+        image: lumen-api:prod
+        ports:
+        - containerPort: 8000

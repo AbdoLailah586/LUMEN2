@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-900 text-gray-100 font-sans antialiased relative min-h-screen overflow-x-hidden selection:bg-blue-500/30 selection:text-blue-200;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Custom Scrollbar for a premium feel */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dark-600 rounded-full hover:bg-dark-700 transition-colors;
+  }
+}
+
+/* Global Animated Aesthetic Background */
+.ambient-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background-color: #05050A; /* matches dark.900 */
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ambient-bg::before,
+.ambient-bg::after {
+  content: '';
+  position: absolute;
+  width: 60vw;
+  height: 60vw;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+  animation: blob 20s infinite alternate;
+}
+
+.ambient-bg::before {
+  top: -10%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(59,130,246,0.8) 0%, rgba(30,58,138,0) 70%);
+}
+
+.ambient-bg::after {
+  bottom: -20%;
+  right: -10%;
+  background: radial-gradient(circle, rgba(14,165,233,0.6) 0%, rgba(30,58,138,0) 70%);
+  animation-delay: -10s;
+  animation-duration: 25s;
+}

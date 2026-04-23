@@ -1,0 +1,23 @@
+{
+  "title": "LUMEN Platform Dashboard",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "API Request Rate",
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[5m])"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Error Rate",
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{status=~\"5..\"}[5m]) / rate(http_requests_total[5m])"
+        }
+      ]
+    }
+  ]
+}

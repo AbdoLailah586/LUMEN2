@@ -1,0 +1,134 @@
+# Python Virtual Environment (CRITICAL - DON'T COMMIT)
+venv/
+backend/venv/
+.env/
+.env
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Node Modules (CRITICAL - DON'T COMMIT)
+node_modules/
+frontend/node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Environment Files
+.env
+.env.*
+*.env
+backend/.env
+frontend/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Uploads & Data (CRITICAL - DON'T COMMIT)
+uploads/
+temp/
+tmp/
+*.csv
+*.xlsx
+*.xls
+*.parquet
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+lumen_setup.log
+
+# MLflow
+mlruns/
+mlflow.db
+
+# Docker volumes
+postgres_data/
+redis_data/
+
+# Secrets
+*.key
+*.pem
+*.crt
+.secrets/
+
+# OS files
+Desktop.ini
+$RECYCLE.BIN/
+
+# Virtual Environments
+venv/
+.venv/
+.venv_lumen/
+env/
+.env/
+backend/venv/
+backend/.venv/
+ENV/
+
+# Virtual Environments (MOST IMPORTANT!)
+venv/
+.venv/
+.venv_lumen/
+ENV/
+env/
+backend/venv/
+backend/.venv/
+
+# Node Modules
+node_modules/
+frontend/node_modules/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment Files
+.env
+.env.*
+*.env
+
+# Data Files
+*.csv
+*.xlsx
+*.xls
+*.parquet
+*.db
+*.sqlite
+
+# Logs
+*.log
+*.txt
+backend_logs*.txt
+
+# MLflow
+mlruns/
+mlflow.db
+
+# Uploads
+uploads/
+temp/
+tmp/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

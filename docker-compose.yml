@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: lumen_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lumen_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lumen_password}
+      POSTGRES_DB: ${POSTGRES_DB:-lumen}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U lumen_user -d lumen" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lumen_network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lumen_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lumen_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-lumen_user}:${POSTGRES_PASSWORD:-lumen_password}@postgres:5432/${POSTGRES_DB:-lumen}
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+    volumes:
+      - ./backend:/app
+      - ./uploads:/app/uploads
+      - ./mlruns:/app/mlruns
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    networks:
+      - lumen_network
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lumen_celery_worker
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-lumen_user}:${POSTGRES_PASSWORD:-lumen_password}@postgres:5432/${POSTGRES_DB:-lumen}
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+    volumes:
+      - ./backend:/app
+      - ./uploads:/app/uploads
+      - ./mlruns:/app/mlruns
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: celery -A app.core.celery_app worker --loglevel=info
+    networks:
+      - lumen_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lumen_frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+      - VITE_WS_URL=ws://localhost:8000/ws
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0
+    networks:
+      - lumen_network
+
+  mlflow_server:
+    image: ghcr.io/mlflow/mlflow:v2.12.1
+    container_name: lumen_mlflow
+    restart: always
+    ports:
+      - "5000:5000"
+    command: mlflow server --backend-store-uri sqlite:///mlruns.db --default-artifact-root /mlruns --host 0.0.0.0 --port 5000
+    volumes:
+      - ./mlruns:/mlruns
+    networks:
+      - lumen_network
+
+volumes:
+  redis_data:
+  postgres_data:
+
+
+networks:
+  lumen_network:
+    driver: bridge

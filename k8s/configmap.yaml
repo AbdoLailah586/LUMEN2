@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lumen-config
+data:
+  MAX_UPLOAD_SIZE_MB: "100"
+  ALLOWED_MIME_TYPES: "text/csv,application/json,image/jpeg,image/png"

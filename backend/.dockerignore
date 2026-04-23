@@ -1,0 +1,34 @@
+# Virtual environments (huge, not needed in image)
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Logs and local DBs
+*.log
+*.db
+*.sqlite
+
+# Test and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Upload and ML artifacts (mounted as volumes)
+uploads/
+mlruns/
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+*.egg-info/
+dist/
+build/
