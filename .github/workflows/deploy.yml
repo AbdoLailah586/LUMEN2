@@ -51,6 +51,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Lowercase image name
+      id: image_name
+      run: echo "value=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
     
     - name: Log in to the Container registry
       uses: docker/login-action@v2
@@ -64,7 +68,7 @@ jobs:
       with:
         context: ./backend
         push: true
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:latest
+        tags: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}-api:latest
         
   deploy-to-k8s:
     needs: build-and-push-docker
@@ -73,6 +77,10 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
+
+    - name: Lowercase image name
+      id: image_name
+      run: echo "value=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
     
     - name: Set up Kubernetes config
       run: |
@@ -82,6 +90,7 @@ jobs:
     - name: Deploy to Cluster
       run: |
         # Update deployment images
-        kubectl set image deployment/lumen-api lumen-api=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:latest
+        kubectl set image deployment/lumen-api lumen-api=${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}-api:latest
         # Apply standard config
         kubectl apply -f k8s/
+
