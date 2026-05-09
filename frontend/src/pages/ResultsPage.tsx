@@ -4,7 +4,7 @@ import { getTrainingJobs, getTrainingResults, getModel, downloadModel, exportCod
 import Plot from 'react-plotly.js';
 import { 
     Trophy, Download, Code, Loader2, 
-    BarChart, Activity, Layers, Target, ShieldCheck
+    BarChart, Activity, Layers, Target, ShieldCheck, TrendingUp
 } from "lucide-react";
 
 
@@ -113,6 +113,33 @@ export const ResultsPage: React.FC = () => {
         );
     }
 
+    const isRegression = results?.task_type === 'regression';
+
+    const classificationMetrics = [
+        { label: "Accuracy Score", val: results?.metrics?.accuracy, icon: <ShieldCheck className="text-green-400" /> },
+        { label: "F1 Score", val: results?.metrics?.f1_score ?? results?.metrics?.f1, icon: <Target className="text-blue-400" /> },
+        { label: "Precision", val: results?.metrics?.precision, icon: <Activity className="text-purple-400" /> },
+        { label: "Recall", val: results?.metrics?.recall, icon: <BarChart className="text-amber-400" /> }
+    ];
+
+    const regressionMetrics = [
+        { label: "R\u00B2 Score", val: results?.metrics?.r2, icon: <TrendingUp className="text-green-400" /> },
+        { label: "RMSE", val: results?.metrics?.rmse, icon: <Target className="text-blue-400" /> },
+        { label: "MAE", val: results?.metrics?.mae, icon: <Activity className="text-purple-400" /> },
+        { label: "MSE", val: results?.metrics?.mse, icon: <BarChart className="text-amber-400" /> }
+    ];
+
+    const displayMetrics = isRegression ? regressionMetrics : classificationMetrics;
+
+    const formatMetric = (val: any) => {
+        if (val === null || val === undefined) return "N/A";
+        if (typeof val === 'number') return val.toFixed(4);
+        return String(val);
+    };
+
+    // Build confusion matrix from API data
+    const confusionMatrix = results?.confusion_matrix;
+
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
             {/* Header */}
@@ -126,6 +153,9 @@ export const ResultsPage: React.FC = () => {
                     </div>
                     <p className="text-slate-400 font-medium flex items-center gap-2">
                         Champion Model: <span className="text-green-400 font-bold">{model?.name || 'Inference...'}</span>
+                        <span className="ml-2 px-2 py-0.5 text-xs font-bold rounded-full bg-slate-800 text-slate-300 border border-white/10">
+                            {isRegression ? 'Regression' : 'Classification'}
+                        </span>
                     </p>
                 </div>
                 
@@ -156,19 +186,14 @@ export const ResultsPage: React.FC = () => {
 
             {/* Top Metrics Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    { label: "Accuracy Score", val: results?.metrics?.accuracy || "0.00", icon: <ShieldCheck className="text-green-400" /> },
-                    { label: "F1 Score", val: results?.metrics?.f1_score || results?.metrics?.f1 || "0.00", icon: <Target className="text-blue-400" /> },
-                    { label: "Precision", val: results?.metrics?.precision || "0.00", icon: <Activity className="text-purple-400" /> },
-                    { label: "Recall", val: results?.metrics?.recall || "0.00", icon: <BarChart className="text-amber-400" /> }
-                ].map((stat, i) => (
+                {displayMetrics.map((stat, i) => (
                     <div key={i} className="bg-slate-900/40 border border-white/5 p-6 rounded-2xl">
                         <div className="flex justify-between items-start mb-4">
                             <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">{stat.label}</span>
                             {stat.icon}
                         </div>
                         <div className="text-2xl font-bold text-white">
-                            {typeof stat.val === 'number' ? stat.val.toFixed(4) : stat.val}
+                            {formatMetric(stat.val)}
                         </div>
                     </div>
                 ))}
@@ -213,38 +238,79 @@ export const ResultsPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Confusion Matrix or Additional Visuals */}
+                {/* Confusion Matrix (Classification) or Regression Summary */}
                 <div className="bg-slate-900/40 border border-white/5 p-8 rounded-3xl space-y-6 text-center">
-                    <h3 className="text-xl font-bold text-white flex items-center justify-center gap-2">
-                        <Activity size={20} className="text-green-400" />
-                        Confusion Matrix
-                    </h3>
-                    <div className="flex flex-col items-center justify-center h-[400px]">
-                         <div className="bg-slate-950 border border-white/5 rounded-2xl p-8 shadow-inner">
-                            {/* Simple representation if Plotly is overkill for a 2x2 or similar */}
-                            <div className="grid grid-cols-2 gap-2 w-64 h-64">
-                                <div className="bg-green-500/20 border border-green-500/30 flex flex-col items-center justify-center rounded-xl p-4">
-                                    <span className="text-2xl font-bold text-white">42</span>
-                                    <span className="text-[10px] text-green-400 uppercase font-bold">TP</span>
-                                </div>
-                                <div className="bg-red-500/10 border border-red-500/20 flex flex-col items-center justify-center rounded-xl p-4">
-                                    <span className="text-2xl font-bold text-white">4</span>
-                                    <span className="text-[10px] text-red-400 uppercase font-bold">FP</span>
-                                </div>
-                                <div className="bg-red-500/10 border border-red-500/20 flex flex-col items-center justify-center rounded-xl p-4">
-                                    <span className="text-2xl font-bold text-white">2</span>
-                                    <span className="text-[10px] text-red-400 uppercase font-bold">FN</span>
-                                </div>
-                                <div className="bg-green-500/20 border border-green-500/30 flex flex-col items-center justify-center rounded-xl p-4">
-                                    <span className="text-2xl font-bold text-white">52</span>
-                                    <span className="text-[10px] text-green-400 uppercase font-bold">TN</span>
-                                </div>
+                    {!isRegression ? (
+                        <>
+                            <h3 className="text-xl font-bold text-white flex items-center justify-center gap-2">
+                                <Activity size={20} className="text-green-400" />
+                                Confusion Matrix
+                            </h3>
+                            <div className="flex flex-col items-center justify-center h-[400px]">
+                                {confusionMatrix && confusionMatrix.length > 0 ? (
+                                    <>
+                                        <div className="bg-slate-950 border border-white/5 rounded-2xl p-8 shadow-inner">
+                                            <div className="grid grid-cols-2 gap-2 w-64 h-64">
+                                                <div className="bg-green-500/20 border border-green-500/30 flex flex-col items-center justify-center rounded-xl p-4">
+                                                    <span className="text-2xl font-bold text-white">{confusionMatrix[0]?.[0] ?? '\u2014'}</span>
+                                                    <span className="text-[10px] text-green-400 uppercase font-bold">TP</span>
+                                                </div>
+                                                <div className="bg-red-500/10 border border-red-500/20 flex flex-col items-center justify-center rounded-xl p-4">
+                                                    <span className="text-2xl font-bold text-white">{confusionMatrix[0]?.[1] ?? '\u2014'}</span>
+                                                    <span className="text-[10px] text-red-400 uppercase font-bold">FP</span>
+                                                </div>
+                                                <div className="bg-red-500/10 border border-red-500/20 flex flex-col items-center justify-center rounded-xl p-4">
+                                                    <span className="text-2xl font-bold text-white">{confusionMatrix[1]?.[0] ?? '\u2014'}</span>
+                                                    <span className="text-[10px] text-red-400 uppercase font-bold">FN</span>
+                                                </div>
+                                                <div className="bg-green-500/20 border border-green-500/30 flex flex-col items-center justify-center rounded-xl p-4">
+                                                    <span className="text-2xl font-bold text-white">{confusionMatrix[1]?.[1] ?? '\u2014'}</span>
+                                                    <span className="text-[10px] text-green-400 uppercase font-bold">TN</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-slate-500 mt-6 max-w-xs mx-auto">
+                                            The confusion matrix shows the relationship between actual and predicted classes for the test split.
+                                        </p>
+                                    </>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center border border-dashed border-slate-800 rounded-2xl px-6">
+                                        <p className="text-slate-500 italic">No confusion matrix data available. Re-train a classification model to generate this.</p>
+                                    </div>
+                                )}
                             </div>
-                         </div>
-                         <p className="text-xs text-slate-500 mt-6 max-w-xs mx-auto">
-                            The confusion matrix shows the relationship between actual and predicted classes for the test split.
-                         </p>
-                    </div>
+                        </>
+                    ) : (
+                        <>
+                            <h3 className="text-xl font-bold text-white flex items-center justify-center gap-2">
+                                <TrendingUp size={20} className="text-green-400" />
+                                Regression Summary
+                            </h3>
+                            <div className="flex flex-col items-center justify-center h-[400px] space-y-6">
+                                <div className="bg-slate-950 border border-white/5 rounded-2xl p-8 shadow-inner w-full max-w-sm space-y-4">
+                                    <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                                        <span className="text-slate-400 text-sm">R² (Explained Variance)</span>
+                                        <span className="text-white font-bold">{formatMetric(results?.metrics?.r2)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                                        <span className="text-slate-400 text-sm">Root Mean Squared Error</span>
+                                        <span className="text-white font-bold">{formatMetric(results?.metrics?.rmse)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                                        <span className="text-slate-400 text-sm">Mean Absolute Error</span>
+                                        <span className="text-white font-bold">{formatMetric(results?.metrics?.mae)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2">
+                                        <span className="text-slate-400 text-sm">Mean Squared Error</span>
+                                        <span className="text-white font-bold">{formatMetric(results?.metrics?.mse)}</span>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                                    Regression metrics measure prediction error magnitude. Lower MSE/RMSE/MAE and higher R² indicate better fit.
+                                </p>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

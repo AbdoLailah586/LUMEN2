@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
-from app.api.endpoints import users, datasets, jobs, models, upload, cleaning, training, export, auth, ws, predict, payments, rl_endpoints, gnn_endpoints
+from app.api.endpoints import users, datasets, jobs, models, upload, cleaning, training, export, auth, ws, predict, payments, rl_endpoints, gnn_endpoints, ai_endpoints, cv_endpoints
+
 from app.api.deps import get_current_user
 
 api_router = APIRouter()
@@ -17,3 +18,6 @@ api_router.include_router(ws.router, prefix="/ws", tags=["WebSockets"])
 api_router.include_router(predict.router, prefix="/predict", tags=["Inference"])
 api_router.include_router(rl_endpoints.router, tags=["RL Agent"], dependencies=[Depends(get_current_user)])
 api_router.include_router(gnn_endpoints.router, tags=["GNN Agent"], dependencies=[Depends(get_current_user)])
+api_router.include_router(ai_endpoints.router, prefix="/ai", tags=["AI Integration"], dependencies=[Depends(get_current_user)])
+api_router.include_router(cv_endpoints.router, prefix="/cv", tags=["Computer Vision"], dependencies=[Depends(get_current_user)])
+

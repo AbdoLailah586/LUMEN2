@@ -19,6 +19,8 @@ def create_access_token(
     return encoded_jwt
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    if not hashed_password:
+        return False
     # Encode passwords to bytes; bcrypt requires bytes
     password_bytes = plain_password.encode('utf-8')
     hash_bytes = hashed_password.encode('utf-8')

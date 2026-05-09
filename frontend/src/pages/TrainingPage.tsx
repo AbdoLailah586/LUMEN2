@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getDatasets, getDatasetPreview, startTraining, getTrainingJobStatus, getTrainingResults } from "../services/api";
+import { 
+    getDatasets, getDatasetPreview, startTraining, getTrainingJobStatus, 
+    getTrainingResults, suggestModel 
+} from "../services/api";
 import { 
     Cpu, Database, Play, Loader2, CheckCircle2, AlertCircle, 
-    Settings, Activity, Target, Clock
+    Settings, Activity, Target, Clock, Sparkles
 } from "lucide-react";
-
+import { AISuggestButton } from "../components/AI/AISuggestButton";
 
 export const TrainingPage: React.FC = () => {
     const { datasetId: urlDatasetId } = useParams<{ datasetId: string }>();
@@ -15,7 +18,6 @@ export const TrainingPage: React.FC = () => {
     const [selectedDatasetId, setSelectedDatasetId] = useState<string>(urlDatasetId || "");
     const [preview, setPreview] = useState<any>(null);
 
-    
     // Training Config
     const [targetColumn, setTargetColumn] = useState<string>("");
     const [selectedModels, setSelectedModels] = useState<string[]>(["XGBoost"]);
@@ -26,6 +28,10 @@ export const TrainingPage: React.FC = () => {
         cv_folds: 5
     });
     
+    // AI State
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiReasoning, setAiReasoning] = useState<string | null>(null);
+
     // Job State
     const [jobId, setJobId] = useState<string | null>(null);
     const [jobStatus, setJobStatus] = useState<string | null>(null);
@@ -71,9 +77,6 @@ export const TrainingPage: React.FC = () => {
         try {
             const data = await getDatasets();
             setDatasets(data);
-            if (!selectedDatasetId && data.length > 0) {
-                // setSelectedDatasetId(data[0].id);
-            }
         } catch (err) {
             console.error("Failed to fetch datasets:", err);
         }
@@ -84,7 +87,6 @@ export const TrainingPage: React.FC = () => {
             const data = await getDatasetPreview(id);
             setPreview(data);
             if (data.columns && data.columns.length > 0) {
-                // Heuristic: pick the last column as default target
                 setTargetColumn(data.columns[data.columns.length - 1].name);
             }
         } catch (err) {
@@ -92,6 +94,30 @@ export const TrainingPage: React.FC = () => {
         }
     };
 
+    const handleAISuggest = async () => {
+        if (!selectedDatasetId || !targetColumn) {
+            alert("Please select a dataset and target column first.");
+            return;
+        }
+        setAiLoading(true);
+        try {
+            const taskType = preview?.type === "classification" ? "classification" : "regression";
+            const res = await suggestModel(selectedDatasetId, targetColumn, taskType);
+            const recommendation = res.suggestions.recommended_models[0];
+            
+            if (recommendation) {
+                setSelectedModels([recommendation.name]);
+                if (recommendation.hyperparameters) {
+                    setParams((prev: any) => ({ ...prev, ...recommendation.hyperparameters }));
+                }
+                setAiReasoning(recommendation.reason);
+            }
+        } catch (err) {
+            alert("AI suggestion failed.");
+        } finally {
+            setAiLoading(false);
+        }
+    };
 
     const handleStartTraining = async () => {
         if (!selectedDatasetId || !targetColumn || selectedModels.length === 0) {
@@ -105,9 +131,11 @@ export const TrainingPage: React.FC = () => {
         
         try {
             const config = {
-                target: targetColumn,
+                target_column: targetColumn,
                 models: selectedModels,
-                parameters: params
+                parameters: params,
+                task_type: preview?.type === "classification" ? "classification" : "regression",
+                preset: "expert"
             };
             const response = await startTraining(selectedDatasetId, config);
             setJobId(response.job_id);
@@ -162,7 +190,7 @@ export const TrainingPage: React.FC = () => {
     }
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-10 animate-fade-in">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-10 animate-fade-in pb-24">
             {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-slate-900/50 backdrop-blur-xl border border-white/5 p-8 rounded-3xl shadow-2xl">
                 <div className="space-y-2">
@@ -175,37 +203,54 @@ export const TrainingPage: React.FC = () => {
                     <p className="text-slate-400 font-medium">Configure and trigger parallelized AutoML pipelines.</p>
                 </div>
                 
-                {jobId ? (
-                    <div className="flex items-center gap-4 bg-slate-800/50 p-4 rounded-2xl border border-white/5 min-w-[300px]">
-                        <div className="flex-1 space-y-2">
-                            <div className="flex justify-between text-xs font-bold uppercase tracking-tighter">
-                                <span className="text-blue-400 animate-pulse">{jobStatus}...</span>
-                                <span className="text-white">{Math.round(jobProgress * 100)}%</span>
+                <div className="flex flex-wrap items-center gap-4">
+                    <AISuggestButton 
+                        onClick={handleAISuggest} 
+                        loading={aiLoading} 
+                        label="AI Recommend Model" 
+                    />
+                    {jobId ? (
+                        <div className="flex items-center gap-4 bg-slate-800/50 p-4 rounded-2xl border border-white/5 min-w-[300px]">
+                            <div className="flex-1 space-y-2">
+                                <div className="flex justify-between text-xs font-bold uppercase tracking-tighter">
+                                    <span className="text-blue-400 animate-pulse">{jobStatus}...</span>
+                                    <span className="text-white">{Math.round(jobProgress * 100)}%</span>
+                                </div>
+                                <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full bg-blue-500 transition-all duration-500"
+                                        style={{ width: `${jobProgress * 100}%` }}
+                                    ></div>
+                                </div>
                             </div>
-                            <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-blue-500 transition-all duration-500"
-                                    style={{ width: `${jobProgress * 100}%` }}
-                                ></div>
-                            </div>
+                            <Loader2 className="animate-spin text-blue-500" size={24} />
                         </div>
-                        <Loader2 className="animate-spin text-blue-500" size={24} />
-                    </div>
-                ) : (
-                    <button 
-                        onClick={handleStartTraining}
-                        disabled={!selectedDatasetId || !targetColumn}
-                        className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-600/20 transition-all transform hover:scale-105 disabled:opacity-50 disabled:scale-100"
-                    >
-                        <Play size={20} fill="currentColor" /> Initiate Training
-                    </button>
-                )}
+                    ) : (
+                        <button 
+                            onClick={handleStartTraining}
+                            disabled={!selectedDatasetId || !targetColumn}
+                            className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-600/20 transition-all transform hover:scale-105 disabled:opacity-50 disabled:scale-100"
+                        >
+                            <Play size={20} fill="currentColor" /> Initiate Training
+                        </button>
+                    )}
+                </div>
             </div>
 
             {error && (
                 <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-4 text-red-400">
                     <AlertCircle size={24} />
                     <p className="text-sm font-medium">{error}</p>
+                </div>
+            )}
+
+            {aiReasoning && (
+                <div className="bg-purple-600/10 border border-purple-500/20 p-4 rounded-2xl flex items-start gap-4 text-purple-300 animate-slide-down">
+                    <Sparkles size={20} className="mt-1 shrink-0" />
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-purple-400 mb-1">AI Reasoning</p>
+                        <p className="text-sm italic">"{aiReasoning}"</p>
+                    </div>
                 </div>
             )}
 
@@ -254,7 +299,7 @@ export const TrainingPage: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {[
                                 { id: "XGBoost", name: "XGBoost", desc: "Extreme Gradient Boosting", icon: "⚡" },
-                                { id: "RandomForest", name: "Random Forest", desc: "Robust Bagging Ensemble", icon: "🌲" },
+                                { id: "RandomForestClassifier", name: "Random Forest", desc: "Robust Bagging Ensemble", icon: "🌲" },
                                 { id: "LightGBM", name: "LightGBM", desc: "Fast Histogram-based Boosting", icon: "🚀" },
                                 { id: "CatBoost", name: "CatBoost", desc: "Categorical-aware Boosting", icon: "🐱" }
                             ].map(model => (
@@ -341,12 +386,6 @@ export const TrainingPage: React.FC = () => {
                                 <span className="text-slate-300">Enabled (4x Threads)</span>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="p-6 bg-blue-500/5 border border-blue-500/10 rounded-3xl">
-                        <p className="text-xs text-slate-500 leading-relaxed italic text-center">
-                            "AutoML will automatically grid-search optimal parameters within your defined boundaries."
-                        </p>
                     </div>
                 </div>
             </div>

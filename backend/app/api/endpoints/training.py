@@ -16,7 +16,7 @@ async def recommend_models(dataset_id: str, db: AsyncSession = Depends(get_db)):
     """
     Analyzes the dataset and recommends suitable machine learning models.
     """
-    result = await db.execute(select(Dataset).filter(Dataset.id == dataset_id))
+    result = await db.execute(select(Dataset).filter(Dataset.id == uuid.UUID(dataset_id)))
     dataset = result.scalar_one_or_none()
     
     if not dataset:
@@ -114,7 +114,7 @@ async def recommend_models(dataset_id: str, db: AsyncSession = Depends(get_db)):
 @router.post("/{dataset_id}/start")
 async def start_training(dataset_id: str, config: Dict[str, Any], db: AsyncSession = Depends(get_db)):
     # Verify dataset exists
-    result = await db.execute(select(Dataset).filter(Dataset.id == dataset_id))
+    result = await db.execute(select(Dataset).filter(Dataset.id == uuid.UUID(dataset_id)))
     dataset = result.scalar_one_or_none()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
@@ -122,7 +122,7 @@ async def start_training(dataset_id: str, config: Dict[str, Any], db: AsyncSessi
     job_id = str(uuid.uuid4())
     job = Job(
         id=job_id,
-        dataset_id=dataset_id,
+        dataset_id=uuid.UUID(dataset_id),
         user_id=dataset.user_id,
         job_type="training",
         status="pending",
@@ -139,7 +139,7 @@ async def start_training(dataset_id: str, config: Dict[str, Any], db: AsyncSessi
 
 @router.get("/jobs/{id}/status")
 async def get_training_job_status(id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Job).filter(Job.id == id))
+    result = await db.execute(select(Job).filter(Job.id == uuid.UUID(id)))
     job = result.scalar_one_or_none()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -153,7 +153,7 @@ async def get_training_job_status(id: str, db: AsyncSession = Depends(get_db)):
 
 @router.get("/jobs/{id}/results")
 async def get_training_results(id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Job).filter(Job.id == id))
+    result = await db.execute(select(Job).filter(Job.id == uuid.UUID(id)))
     job = result.scalar_one_or_none()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -165,11 +165,13 @@ async def get_training_results(id: str, db: AsyncSession = Depends(get_db)):
         "job_id": str(job.id), 
         "metrics": job.results.get('metrics', {}),
         "feature_importance": job.results.get('feature_importance', {}),
-        "model_id": job.results.get('model_id')
+        "model_id": job.results.get('model_id'),
+        "task_type": job.config.get('task_type', 'classification'),
+        "confusion_matrix": job.results.get('confusion_matrix')
     }
 
 @router.get("/models/{dataset_id}")
 async def get_dataset_models(dataset_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(DbModel).filter(DbModel.dataset_id == dataset_id))
+    result = await db.execute(select(DbModel).filter(DbModel.dataset_id == uuid.UUID(dataset_id)))
     models = result.scalars().all()
     return [{"id": str(m.id), "name": m.model_name, "metrics": m.metrics, "created_at": m.created_at} for m in models]

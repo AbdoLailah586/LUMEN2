@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List, Any, Dict
 import os
+import uuid
 
 from app.schemas.dataset import Dataset, DatasetCreate
 from app.models.dataset import Dataset as DatasetModel
@@ -10,6 +11,8 @@ from app.models.activity import ActivityLog as ActivityLogModel
 from app.core.database import get_db
 from app.core.config import settings
 from app.services.storage import get_storage_service
+from app.api.deps import get_current_user
+from app.models.user import User
 
 router = APIRouter()
 
@@ -31,25 +34,37 @@ async def create_dataset(
 @router.get("/", response_model=List[Dataset])
 async def read_datasets(
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
     """
-    Retrieve datasets.
+    Retrieve datasets for the current user only.
     """
-    result = await db.execute(select(DatasetModel).offset(skip).limit(limit))
+    result = await db.execute(
+        select(DatasetModel)
+        .where(DatasetModel.user_id == current_user.id)
+        .offset(skip)
+        .limit(limit)
+    )
     datasets = result.scalars().all()
     return datasets
 
 @router.get("/{dataset_id}", response_model=Dataset)
 async def read_dataset(
     dataset_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """
-    Get dataset by ID.
+    Get dataset by ID (only if owned by current user).
     """
-    result = await db.execute(select(DatasetModel).filter(DatasetModel.id == dataset_id))
+    result = await db.execute(
+        select(DatasetModel).filter(
+            DatasetModel.id == uuid.UUID(dataset_id),
+            DatasetModel.user_id == current_user.id
+        )
+    )
     dataset = result.scalar_one_or_none()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
@@ -66,7 +81,7 @@ async def get_dataset_preview(
     import pandas as pd
     import json
     
-    result = await db.execute(select(DatasetModel).filter(DatasetModel.id == dataset_id))
+    result = await db.execute(select(DatasetModel).filter(DatasetModel.id == uuid.UUID(dataset_id)))
     dataset = result.scalar_one_or_none()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
@@ -122,7 +137,7 @@ async def get_dataset_preview(
             
         return {
             "columns": columns_info,
-            "preview_data": json.loads(df.head(5).to_json(orient='records', date_format='iso'))
+            "data": json.loads(df.head(5).to_json(orient='records', date_format='iso'))
         }
         
     except Exception as e:
@@ -140,7 +155,7 @@ async def get_dataset_profile(
     import json
     import numpy as np
     
-    result = await db.execute(select(DatasetModel).filter(DatasetModel.id == dataset_id))
+    result = await db.execute(select(DatasetModel).filter(DatasetModel.id == uuid.UUID(dataset_id)))
     dataset = result.scalar_one_or_none()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
@@ -243,7 +258,7 @@ async def get_dataset_eda(
     """
     import pandas as pd
     
-    result = await db.execute(select(DatasetModel).filter(DatasetModel.id == dataset_id))
+    result = await db.execute(select(DatasetModel).filter(DatasetModel.id == uuid.UUID(dataset_id)))
     dataset = result.scalar_one_or_none()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
@@ -315,7 +330,7 @@ async def get_dataset_activities(
     """
     Retrieve activity history for a dataset.
     """
-    result = await db.execute(select(ActivityLogModel).filter(ActivityLogModel.dataset_id == dataset_id).order_by(ActivityLogModel.created_at.desc()))
+    result = await db.execute(select(ActivityLogModel).filter(ActivityLogModel.dataset_id == uuid.UUID(dataset_id)).order_by(ActivityLogModel.created_at.desc()))
     activities = result.scalars().all()
     # Return as dicts explicitly since we don't have schema import here yet, or rely on FastAPI parsing
     return [{
@@ -361,12 +376,18 @@ async def get_plot_interpretation(
 @router.delete("/{dataset_id}")
 async def delete_dataset(
     dataset_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """
-    Delete dataset.
+    Delete dataset (only if owned by current user).
     """
-    result = await db.execute(select(DatasetModel).filter(DatasetModel.id == dataset_id))
+    result = await db.execute(
+        select(DatasetModel).filter(
+            DatasetModel.id == uuid.UUID(dataset_id),
+            DatasetModel.user_id == current_user.id
+        )
+    )
     dataset = result.scalar_one_or_none()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
@@ -385,12 +406,18 @@ async def delete_dataset(
 @router.get("/{dataset_id}/download")
 async def download_dataset(
     dataset_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """
-    Get a secure download link for the dataset.
+    Get a secure download link for the dataset (only if owned by current user).
     """
-    result = await db.execute(select(DatasetModel).filter(DatasetModel.id == dataset_id))
+    result = await db.execute(
+        select(DatasetModel).filter(
+            DatasetModel.id == uuid.UUID(dataset_id),
+            DatasetModel.user_id == current_user.id
+        )
+    )
     dataset = result.scalar_one_or_none()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")

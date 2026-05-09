@@ -22,6 +22,12 @@ class Settings(BaseSettings):
 
     # AI
     GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-flash-latest"
+    GEMINI_TEMPERATURE: float = 0.2
+
+    # Google OAuth
+    GOOGLE_CLIENT_ID: Optional[str] = None
+
 
     class Config:
         env_file = ".env"

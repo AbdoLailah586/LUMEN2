@@ -22,7 +22,7 @@ from app.services.ml.distributed import DataProcessorFactory
 @celery_app.task(bind=True)
 def run_training_job(self, job_id: str):
     db = SessionLocal()
-    job = db.query(Job).filter(Job.id == job_id).first()
+    job = db.query(Job).filter(Job.id == uuid.UUID(job_id)).first()
     if not job:
         db.close()
         return "Job not found"
@@ -135,6 +135,14 @@ def run_training_job(self, job_id: str):
             evaluator = ModelEvaluator()
             metrics = evaluator.evaluate(model, X_test, y_test, task_type)
             
+            # Compute confusion matrix for classification
+            confusion_matrix_data = None
+            if task_type == 'classification':
+                from sklearn.metrics import confusion_matrix
+                preds = model.predict(X_test)
+                cm = confusion_matrix(y_test, preds)
+                confusion_matrix_data = cm.tolist()
+            
             # Cross-validation score check
             from sklearn.model_selection import cross_val_score
             if task_type == 'classification':
@@ -155,8 +163,8 @@ def run_training_job(self, job_id: str):
         feature_importance = explainer.explain(model, X_test, feature_names=X.columns.tolist())
         
         # Save model to cloud storage
-        model_id = str(uuid.uuid4())
-        model_filename = f"{model_id}.joblib"
+        model_id = uuid.uuid4()
+        model_filename = f"{str(model_id)}.joblib"
         
         # Save temp local then upload
         temp_model_path = f"/tmp/{model_filename}" if os.name != 'nt' else f"temp_{model_filename}"
@@ -185,9 +193,10 @@ def run_training_job(self, job_id: str):
         db.add(db_model)
         
         job.results = {
-            "model_id": model_id,
+            "model_id": str(model_id),
             "metrics": metrics,
-            "feature_importance": feature_importance
+            "feature_importance": feature_importance,
+            "confusion_matrix": confusion_matrix_data
         }
         job.status = "completed"
         job.progress = 100.0

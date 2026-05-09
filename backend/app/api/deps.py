@@ -30,9 +30,16 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    if not token_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing user information",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
     try:
         user_uuid = uuid.UUID(token_data)
-    except ValueError:
+    except (ValueError, TypeError):
         raise HTTPException(status_code=401, detail="Invalid user ID format in token")
 
     user = await db.scalar(select(User).where(User.id == user_uuid))

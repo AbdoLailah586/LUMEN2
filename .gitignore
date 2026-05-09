@@ -1,41 +1,62 @@
-# Python Virtual Environment (CRITICAL - DON'T COMMIT)
+# ============================================
+# LUMEN Project .gitignore
+# ============================================
+
+# ---------- Python Virtual Environments ----------
 venv/
+.venv/
+.venv_lumen/
+env/
+ENV/
 backend/venv/
-.env/
-.env
-*.pyc
+backend/.venv/
+
+# ---------- Python Cache & Bytecode ----------
 __pycache__/
+*.pyc
 *.pyo
 *.pyd
 .Python
 *.so
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
 
-# Node Modules (CRITICAL - DON'T COMMIT)
+# ---------- Node.js ----------
 node_modules/
-frontend/node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
-package-lock.json
-yarn.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Environment Files
+# ---------- Environment / Secret Files ----------
 .env
 .env.*
-*.env
+!.env.example
 backend/.env
+backend/.env.*
+!backend/.env.example
 frontend/.env
+frontend/.env.*
+!frontend/.env.example
 
-# IDE
+# ---------- IDE / Editor ----------
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.sublime-project
+*.sublime-workspace
+
+# ---------- OS Files ----------
 .DS_Store
 Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Uploads & Data (CRITICAL - DON'T COMMIT)
+# ---------- Data / Upload Files ----------
 uploads/
 temp/
 tmp/
@@ -47,88 +68,53 @@ tmp/
 *.sqlite
 *.sqlite3
 
-# Logs
+# ---------- Logs ----------
 *.log
 logs/
-lumen_setup.log
+*.txt
+!README.txt
+!requirements.txt
+!backend/requirements.txt
 
-# MLflow
+# ---------- MLflow ----------
 mlruns/
 mlflow.db
 
-# Docker volumes
+# ---------- Docker Volumes ----------
 postgres_data/
 redis_data/
 
-# Secrets
+# ---------- Secrets / Certificates ----------
 *.key
 *.pem
 *.crt
 .secrets/
 
-# OS files
-Desktop.ini
-$RECYCLE.BIN/
+# ---------- Frontend Build Output ----------
+frontend/dist/
 
-# Virtual Environments
-venv/
-.venv/
-.venv_lumen/
-env/
-.env/
-backend/venv/
-backend/.venv/
-ENV/
+# ---------- Temporary / Debug Scripts ----------
+backend/check_db.py
+backend/check_db_utf8.py
+backend/check_job.py
+backend/check_job_results.py
+backend/inspect_schema.py
+backend/list_datasets.py
+backend/list_users.py
+backend/reproduce_auth_issue.py
+backend/reproduce_read_issue.py
+backend/test_api.py
+backend/test_bcrypt.py
+backend/test_gemini.py
+backend/run_app.py
 
-# Virtual Environments (MOST IMPORTANT!)
-venv/
-.venv/
-.venv_lumen/
-ENV/
-env/
-backend/venv/
-backend/.venv/
+# ---------- Large / Generated Files ----------
+folder_structure.txt
+dummy_dataset.csv
+iris_visualizations.py
+scaffold_lumen_system.py
 
-# Node Modules
-node_modules/
-frontend/node_modules/
-
-# Python Cache
-__pycache__/
-*.pyc
-*.pyo
-
-# Environment Files
-.env
-.env.*
-*.env
-
-# Data Files
-*.csv
-*.xlsx
-*.xls
-*.parquet
-*.db
-*.sqlite
-
-# Logs
-*.log
-*.txt
-backend_logs*.txt
-
-# MLflow
-mlruns/
-mlflow.db
-
-# Uploads
-uploads/
-temp/
-tmp/
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
+# ---------- Misc ----------
+package-lock.json
+yarn.lock
+*.lock

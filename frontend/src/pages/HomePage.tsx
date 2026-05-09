@@ -1,104 +1,188 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles, Layers, Cpu, Zap } from 'lucide-react';
+import { ArrowRight, Sparkles, Layers, Cpu, Zap, Shield, BarChart3, Upload, LogIn } from 'lucide-react';
 
 const HomePage = () => {
+    const isLoggedIn = !!localStorage.getItem('token');
+
     return (
-        <div className="min-h-full py-10 xl:py-20 relative">
-            {/* Hero Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32">
-                <div className="space-y-8 animate-fade-in relative z-10">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/30 border border-blue-500/30 text-blue-400 text-sm font-semibold tracking-wide">
-                        <Sparkles size={16} className="text-blue-400" />
-                        LUMEN v2.0 is Live
+        <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #05050A 0%, #0a0e1a 30%, #0d1526 60%, #05050A 100%)' }}>
+            {/* Ambient background */}
+            <div className="ambient-bg"></div>
+
+            {/* Animated background elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-[-15%] right-[-5%] w-[500px] h-[500px] rounded-full opacity-20"
+                    style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.4) 0%, transparent 70%)', animation: 'pulse 8s ease-in-out infinite' }} />
+                <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full opacity-15"
+                    style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.3) 0%, transparent 70%)', animation: 'pulse 10s ease-in-out infinite 2s' }} />
+                <div className="absolute top-[40%] left-[30%] w-[300px] h-[300px] rounded-full opacity-10"
+                    style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.4) 0%, transparent 70%)', animation: 'pulse 6s ease-in-out infinite 4s' }} />
+                
+                {/* Grid pattern */}
+                <div className="absolute inset-0 opacity-[0.03]"
+                    style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+            </div>
+
+            {/* Top Nav Bar */}
+            <header className="relative z-20 flex items-center justify-between px-8 lg:px-16 py-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.5)]"
+                        style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)' }}>
+                        <span className="font-heading font-bold text-white text-xl">L</span>
                     </div>
-                    <h1 className="text-5xl lg:text-7xl font-extrabold text-white tracking-tight leading-tight text-balance">
-                        Automate the <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-600 animate-pulse-slow">Machine Learning</span> Lifecycle
-                    </h1>
-                    <p className="text-xl text-gray-400 max-w-lg leading-relaxed text-balance">
-                        The ultimate progressive AutoML platform. Upload messy datasets and deploy production-ready XGBoost models in minutes.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                        <Link
-                            to="/upload"
-                            className="bg-blue-600 flex justify-center items-center gap-2 text-white font-bold py-4 px-8 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.5)] hover:shadow-[0_0_35px_rgba(37,99,235,0.7)] hover:bg-blue-500 transition-all duration-300 transform hover:-translate-y-1"
-                        >
-                            Start Free Trial
-                            <ArrowRight size={20} />
-                        </Link>
+                    <span className="text-xl font-heading font-bold tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300">
+                        LUMEN
+                    </span>
+                </div>
+                <div className="flex items-center gap-3">
+                    {isLoggedIn ? (
                         <Link
                             to="/dashboard"
-                            className="bg-dark-800/80 backdrop-blur-md text-gray-200 border border-gray-700 font-bold py-4 px-8 rounded-xl shadow-lg hover:border-gray-500 hover:text-white hover:bg-dark-700 transition-all duration-300 flex justify-center items-center"
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-semibold text-sm transition-all duration-300"
+                            style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', boxShadow: '0 0 15px rgba(59,130,246,0.3)' }}
                         >
-                            View Dashboard
+                            Go to Dashboard
+                            <ArrowRight size={16} />
                         </Link>
-                    </div>
+                    ) : (
+                        <>
+                            <Link
+                                to="/login"
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-gray-300 hover:text-white border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-300 text-sm font-medium"
+                            >
+                                <LogIn size={16} />
+                                Sign In
+                            </Link>
+                            <Link
+                                to="/login"
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-semibold text-sm transition-all duration-300"
+                                style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', boxShadow: '0 0 15px rgba(59,130,246,0.3)' }}
+                            >
+                                Get Started
+                                <ArrowRight size={16} />
+                            </Link>
+                        </>
+                    )}
                 </div>
+            </header>
 
-                {/* Right Side Abstract Graphic */}
-                <div className="relative animate-slide-up w-full max-w-lg mx-auto lg:mr-0">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-3xl blur-[80px] opacity-20 animate-pulse-slow"></div>
-                    <div className="relative bg-dark-800/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden">
-                        <div className="flex items-center gap-2 mb-6 border-b border-white/5 pb-4">
-                            <div className="flex gap-1.5">
-                                <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                                <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                                <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
-                            </div>
-                            <span className="text-xs font-mono text-gray-500 ml-4">model_training.py</span>
-                        </div>
-                        <pre className="text-sm font-mono text-gray-300 leading-relaxed overflow-hidden">
-                            <span className="text-pink-500">import</span> lumen <span className="text-pink-500">from</span> 'automl'<br/><br/>
-                            <span className="text-blue-400">const</span> pipeline = lumen.<span className="text-yellow-200">init</span>({'{'}<br/>
-                            &nbsp;&nbsp;dataset: <span className="text-green-400">'sales_data_q4.csv'</span>,<br/>
-                            &nbsp;&nbsp;target: <span className="text-green-400">'revenue'</span>,<br/>
-                            &nbsp;&nbsp;preset: <span className="text-green-400">'expert'</span><br/>
-                            {'}'});<br/><br/>
-                            <span className="text-gray-500">// Initiating Hyperparameter search</span><br/>
-                            <span className="text-blue-400">await</span> pipeline.<span className="text-yellow-200">optimize</span>();<br/>
-                            <span className="text-blue-400">const</span> model = pipeline.<span className="text-yellow-200">deploy</span>();
-                        </pre>
-                        <div className="absolute -bottom-4 -right-4 bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-md flex items-center gap-1">
-                            <Zap size={12} /> Optimization Complete
-                        </div>
+            {/* Hero Section */}
+            <div className="relative z-10 max-w-7xl mx-auto px-8 lg:px-16 pt-16 lg:pt-28 pb-20">
+                <div className="text-center max-w-4xl mx-auto space-y-8 animate-fade-in">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-900/30 border border-blue-500/30 text-blue-400 text-sm font-semibold tracking-wide">
+                        <Sparkles size={16} className="text-blue-400" />
+                        LUMEN v3.0 — AI-Powered AutoML
+                    </div>
+
+                    <h1 className="text-5xl lg:text-7xl font-extrabold text-white tracking-tight leading-tight">
+                        Automate the{' '}
+                        <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #60a5fa, #a78bfa, #34d399)' }}>
+                            ML Lifecycle
+                        </span>
+                    </h1>
+
+                    <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed font-medium">
+                        The ultimate AI-augmented AutoML platform. Upload data, clean it with Gemini AI suggestions, train models with automated hyperparameter tuning, and deploy — all in one place.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                        <Link
+                            to="/login"
+                            className="flex justify-center items-center gap-2 text-white font-bold py-4 px-10 rounded-xl transition-all transform hover:-translate-y-1"
+                            style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', boxShadow: '0 0 25px rgba(59,130,246,0.4)' }}
+                        >
+                            <Upload size={20} />
+                            Start Now — It's Free
+                        </Link>
+                        <a
+                            href="#features"
+                            className="bg-white/5 backdrop-blur-md text-gray-200 border border-white/10 font-bold py-4 px-10 rounded-xl hover:bg-white/10 transition-all flex justify-center items-center gap-2"
+                        >
+                            Explore Features
+                            <ArrowRight size={18} />
+                        </a>
                     </div>
                 </div>
             </div>
 
-            {/* Features Grid ("Bento Box") */}
-            <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-6 animate-slide-up" style={{animationDelay: '0.2s'}}>
-                <Link 
-                    to="/cleaning"
-                    className="md:col-span-6 lg:col-span-4 p-8 bg-dark-800/50 backdrop-blur-lg rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(59,130,246,0.1)] group cursor-pointer block"
-                >
-                    <div className="w-14 h-14 rounded-2xl bg-blue-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-blue-500/20">
-                        <Layers className="text-blue-400" size={28} />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-100 mb-3">1. Upload & Clean</h3>
-                    <p className="text-gray-400 leading-relaxed font-medium">Drag and drop your data, handle missing values, outliers, and scaling automatically with our intelligent preprocessing pipeline.</p>
-                </Link>
+            {/* Features Grid */}
+            <div id="features" className="relative z-10 max-w-7xl mx-auto px-8 lg:px-16 pb-32">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">Everything You Need</h2>
+                    <p className="text-gray-500 text-lg max-w-xl mx-auto">From raw data to deployed models — a complete ML workflow powered by AI.</p>
+                </div>
 
-                <Link 
-                    to="/training"
-                    className="md:col-span-6 lg:col-span-4 p-8 bg-dark-800/50 backdrop-blur-lg rounded-3xl border border-white/5 hover:border-cyan-500/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] group cursor-pointer block"
-                >
-                    <div className="w-14 h-14 rounded-2xl bg-cyan-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-cyan-500/20">
-                        <Cpu className="text-cyan-400" size={28} />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-100 mb-3">2. Train Models</h3>
-                    <p className="text-gray-400 leading-relaxed font-medium">Choose logic from beginner heuristics to expert XGBoost & Optuna hyperparameter tuning without writing any boilerplate code.</p>
-                </Link>
-
-                <Link 
-                    to="/results"
-                    className="md:col-span-6 md:col-start-4 lg:col-span-4 p-8 bg-dark-800/50 backdrop-blur-lg rounded-3xl border border-white/5 hover:border-indigo-500/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(99,102,241,0.1)] group cursor-pointer block"
-                >
-                    <div className="w-14 h-14 rounded-2xl bg-indigo-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-indigo-500/20">
-                        <Zap className="text-indigo-400" size={28} />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-100 mb-3">3. Export & Deploy</h3>
-                    <p className="text-gray-400 leading-relaxed font-medium">Evaluate with SHAP visual insights and download pure Python inference code instantly for your production servers.</p>
-                </Link>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[
+                        { icon: <Upload size={28} />, title: 'Smart Upload', desc: 'Drag & drop CSV, Excel, JSON, Parquet, XML, or SQLite files with automatic format detection.', color: 'blue', link: '/login' },
+                        { icon: <Layers size={28} />, title: 'AI Data Cleaning', desc: 'Gemini AI detects outliers, suggests cleaning strategies, and purifies your signal from noise.', color: 'cyan', link: '/login' },
+                        { icon: <Cpu size={28} />, title: 'AutoML Training', desc: 'Automated hyperparameter tuning for XGBoost, Random Forests, LightGBM, and Deep Learning.', color: 'amber', link: '/login' },
+                        { icon: <BarChart3 size={28} />, title: 'Advanced EDA', desc: 'Interactive visualizations, correlation matrices, and statistical profiling of your datasets.', color: 'purple', link: '/login' },
+                        { icon: <Zap size={28} />, title: 'SHAP Explainability', desc: 'Understand model decisions with feature importance and local SHAP explanations.', color: 'indigo', link: '/login' },
+                        { icon: <Shield size={28} />, title: 'Enterprise Security', desc: 'User-scoped data isolation, rate limiting, and secure file validation out of the box.', color: 'emerald', link: '/login' },
+                    ].map((feature, i) => {
+                        const colorMap: Record<string, string> = {
+                            blue: 'rgba(59,130,246,', cyan: 'rgba(6,182,212,', amber: 'rgba(245,158,11,',
+                            purple: 'rgba(168,85,247,', indigo: 'rgba(99,102,241,', emerald: 'rgba(16,185,129,',
+                        };
+                        const c = colorMap[feature.color] || 'rgba(59,130,246,';
+                        return (
+                            <Link
+                                key={i}
+                                to={feature.link}
+                                className="group p-8 rounded-3xl border border-white/5 backdrop-blur-lg transition-all duration-300 hover:-translate-y-1"
+                                style={{ background: 'rgba(15,23,42,0.4)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.borderColor = `${c}0.3)`}
+                                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'}
+                            >
+                                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border transition-transform group-hover:scale-110"
+                                    style={{ background: `${c}0.1)`, borderColor: `${c}0.2)`, color: `${c}1)` }}>
+                                    {feature.icon}
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
+                                <p className="text-gray-400 leading-relaxed font-medium text-sm">{feature.desc}</p>
+                            </Link>
+                        );
+                    })}
+                </div>
             </div>
+
+            {/* CTA Section */}
+            <div className="relative z-10 max-w-7xl mx-auto px-8 lg:px-16 pb-20">
+                <div className="text-center p-12 rounded-3xl border border-white/5 backdrop-blur-xl"
+                    style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.08))' }}>
+                    <h2 className="text-3xl font-bold text-white mb-4">Ready to Illuminate Your Data?</h2>
+                    <p className="text-gray-400 mb-8 max-w-lg mx-auto">Create a free account and start building ML models in minutes.</p>
+                    <Link
+                        to="/login"
+                        className="inline-flex items-center gap-2 text-white font-bold py-4 px-10 rounded-xl transition-all transform hover:-translate-y-1"
+                        style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', boxShadow: '0 0 25px rgba(59,130,246,0.4)' }}
+                    >
+                        Get Started Free
+                        <ArrowRight size={20} />
+                    </Link>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <footer className="relative z-10 border-t border-white/5 px-8 lg:px-16 py-8">
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                    <p className="text-xs text-gray-600">&copy; {new Date().getFullYear()} LUMEN AutoML Platform. All rights reserved.</p>
+                    <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}>
+                            <span className="font-heading font-bold text-white text-xs">L</span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+
+            {/* Inline animation */}
+            <style>{`
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); opacity: 0.15; }
+                    50% { transform: scale(1.1); opacity: 0.25; }
+                }
+            `}</style>
         </div>
     );
 };

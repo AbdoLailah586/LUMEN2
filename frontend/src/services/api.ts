@@ -1,10 +1,11 @@
 /// <reference types="vite/client" />
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const apiClient = axios.create({
-    baseURL: API_URL,
+    baseURL: `${API_BASE_URL}/api`,
+
     headers: {
         'Accept': 'application/json',
     },
@@ -47,6 +48,11 @@ export const login = async (credentials: URLSearchParams) => {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
     });
+    return response.data;
+};
+
+export const googleLogin = async (credential: string) => {
+    const response = await apiClient.post('/auth/login/google', { credential });
     return response.data;
 };
 
@@ -150,3 +156,115 @@ export const exportReport = async (modelId: string) => {
     const response = await apiClient.get(`/export/${modelId}/report`);
     return response.data;
 };
+
+// AI Integration
+export const analyzeData = async (datasetId: string) => {
+    const response = await apiClient.post(`/ai/analyze-data?dataset_id=${datasetId}`);
+    return response.data;
+};
+
+export const suggestCleaning = async (datasetId: string) => {
+    const response = await apiClient.post(`/ai/suggest-cleaning?dataset_id=${datasetId}`);
+    return response.data;
+};
+
+export const suggestFeatures = async (datasetId: string, target?: string) => {
+    const response = await apiClient.post(`/ai/suggest-features?dataset_id=${datasetId}${target ? `&target=${target}` : ''}`);
+    return response.data;
+};
+
+export const suggestModel = async (datasetId: string, target: string, taskType: string = "classification") => {
+    const response = await apiClient.post(`/ai/suggest-model?dataset_id=${datasetId}&target=${target}&task_type=${taskType}`);
+    return response.data;
+};
+
+export const chatWithAI = async (question: string, datasetId?: string) => {
+    const response = await apiClient.post(`/ai/chat?question=${encodeURIComponent(question)}${datasetId ? `&dataset_id=${datasetId}` : ''}`);
+    return response.data;
+};
+
+export const aiAutoClean = async (datasetId: string) => {
+    const response = await apiClient.post(`/ai/auto-clean?dataset_id=${datasetId}`);
+    return response.data;
+};
+
+// Computer Vision
+export const getCVModels = async (taskType?: string, maxSize?: number, sortBy?: string) => {
+    let url = '/cv/models';
+    const params = new URLSearchParams();
+    if (taskType) params.append('task_type', taskType);
+    if (maxSize) params.append('max_size_mb', maxSize.toString());
+    if (sortBy) params.append('sort_by', sortBy);
+    if (params.toString()) url += `?${params.toString()}`;
+    const response = await apiClient.get(url);
+    return response.data;
+};
+
+export const getCVModel = async (slug: string) => {
+    const response = await apiClient.get(`/cv/models/${slug}`);
+    return response.data;
+};
+
+export const recommendCVModels = async (params: any) => {
+    const formData = new FormData();
+    Object.keys(params).forEach(key => formData.append(key, params[key]));
+    const response = await apiClient.post('/cv/models/recommend', formData);
+    return response.data;
+};
+
+export const runCVInference = async (image: File, modelSlug: string) => {
+    const formData = new FormData();
+    formData.append('image', image);
+    formData.append('model_slug', modelSlug);
+    const response = await apiClient.post('/cv/inference', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+};
+
+export const runCVBatchInference = async (images: File[], modelSlug: string) => {
+    const formData = new FormData();
+    images.forEach(img => formData.append('images', img));
+    formData.append('model_slug', modelSlug);
+    const response = await apiClient.post('/cv/batch-inference', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+};
+
+export const runCVEnsemble = async (image: File, modelSlugs: string[], strategy: string) => {
+    const formData = new FormData();
+    formData.append('image', image);
+    formData.append('model_slugs', modelSlugs.join(','));
+    formData.append('strategy', strategy);
+    const response = await apiClient.post('/cv/ensemble', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+};
+
+export const startCVFineTune = async (dataset: File, config: any) => {
+    const formData = new FormData();
+    formData.append('dataset', dataset);
+    Object.keys(config).forEach(key => formData.append(key, config[key]));
+    const response = await apiClient.post('/cv/fine-tune', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+};
+
+export const getCVFineTuneStatus = async (jobId: string) => {
+    const response = await apiClient.get(`/cv/fine-tune/${jobId}/status`);
+    return response.data;
+};
+
+export const downloadCVFineTuneModel = async (jobId: string) => {
+    const response = await apiClient.get(`/cv/fine-tune/${jobId}/download`, {
+        responseType: 'blob'
+    });
+    return response.data;
+};
+
+export default apiClient;
+
+

@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getDatasets, getDataset, getDatasetPreview, applyCleaning } from "../services/api";
+import { aiAutoClean, getDatasets, getDataset, getDatasetPreview, applyCleaning, suggestCleaning } from "../services/api";
 import { 
-    Eraser, Database, Check, Loader2, AlertCircle, 
-    Table as TableIcon, RefreshCcw, Filter, ChevronLeft, ChevronRight, Settings2, ArrowRight
+    Eraser, Check, Loader2, 
+    Table as TableIcon, RefreshCcw, Filter, ChevronLeft, ChevronRight, Settings2, ArrowRight,
+    Sparkles, Wand2
 } from "lucide-react";
+
+import { AISuggestButton } from "../components/AI/AISuggestButton";
+import { SuggestionCard } from "../components/AI/SuggestionCard";
 
 export const CleaningPage: React.FC = () => {
     const { datasetId } = useParams<{ datasetId: string }>();
@@ -14,6 +18,10 @@ export const CleaningPage: React.FC = () => {
     const [selectedDataset, setSelectedDataset] = useState<any>(null);
     const [preview, setPreview] = useState<any>(null);
     const [applying, setApplying] = useState(false);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiCleaning, setAiCleaning] = useState(false);
+    const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+
     
     // Cleaning Config
     const [cleaningConfig, setCleaningConfig] = useState<any>({
@@ -65,6 +73,54 @@ export const CleaningPage: React.FC = () => {
         }
     };
 
+    const handleAISuggest = async () => {
+        if (!datasetId) return;
+        setAiLoading(true);
+        try {
+            const res = await suggestCleaning(datasetId);
+            setAiSuggestions(res.suggestions);
+        } catch (err) {
+            alert("AI analysis failed.");
+        } finally {
+            setAiLoading(false);
+        }
+    };
+
+    const applyAISuggestion = (suggestion: any) => {
+        const { column, action, params } = suggestion;
+        
+        if (action === 'drop_column') {
+            setCleaningConfig((prev: any) => ({
+                ...prev,
+                drop_columns: [...new Set([...prev.drop_columns, column])]
+            }));
+        } else if (action === 'fill_missing') {
+            setColumnStrategies(prev => ({
+                ...prev,
+                [column]: params?.strategy || 'mean'
+            }));
+        }
+        
+        // Remove from list
+        setAiSuggestions(prev => prev.filter(s => s !== suggestion));
+    };
+
+    const handleAIAutoClean = async () => {
+        if (!datasetId) return;
+        if (!window.confirm("AI will automatically clean your data using generated Python code. Proceed?")) return;
+        
+        setAiCleaning(true);
+        try {
+            const result = await aiAutoClean(datasetId);
+            alert("AI Cleaning Complete! Code used:\n\n" + result.code_used);
+            navigate(`/dashboard/${result.cleaned_dataset_id}`);
+        } catch (err) {
+            console.error(err);
+            alert("AI Autonomous Cleaning failed.");
+        } finally {
+            setAiCleaning(false);
+        }
+    };
 
     const handleApplyCleaning = async () => {
         if (!datasetId) return;
@@ -75,10 +131,10 @@ export const CleaningPage: React.FC = () => {
                 column_strategies: columnStrategies
             };
             const result = await applyCleaning(datasetId, finalConfig);
-            alert("Cleaning Applied! New dataset created: " + result.cleaned_dataset_id);
+            alert("Cleaning Applied! New dataset created.");
             navigate(`/dashboard/${result.cleaned_dataset_id}`);
         } catch (err) {
-            alert("Cleaning failed. See console for details.");
+            alert("Cleaning failed.");
         } finally {
             setApplying(false);
         }
@@ -116,7 +172,7 @@ export const CleaningPage: React.FC = () => {
     }
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pb-24">
             {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-slate-900/50 backdrop-blur-xl border border-white/5 p-8 rounded-3xl shadow-2xl">
                 <div className="space-y-2">
@@ -132,6 +188,18 @@ export const CleaningPage: React.FC = () => {
                 </div>
                 
                 <div className="flex flex-wrap gap-3">
+                    <AISuggestButton 
+                        onClick={handleAISuggest} 
+                        loading={aiLoading} 
+                        label="AI Suggest Cleaning" 
+                    />
+                    <button 
+                        onClick={handleAIAutoClean}
+                        disabled={aiCleaning}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition-all disabled:opacity-50"
+                    >
+                        {aiCleaning ? <Loader2 size={18} className="animate-spin" /> : <><Wand2 size={18} /> AI Auto-Clean</>}
+                    </button>
                     <button 
                         onClick={() => navigate(`/dashboard/${datasetId}`)}
                         className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/5 rounded-xl transition-all"
@@ -154,9 +222,30 @@ export const CleaningPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
                 {/* Configuration Sidebar */}
                 <div className="space-y-6">
+                    {/* AI Suggestions Section */}
+                    {aiSuggestions.length > 0 && (
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-bold text-purple-400 uppercase tracking-widest flex items-center gap-2">
+                                <Sparkles size={14} /> AI Recommendations ({aiSuggestions.length})
+                            </h3>
+                            <div className="space-y-3 max-h-[500px] overflow-y-auto no-scrollbar pr-1">
+                                {aiSuggestions.map((s, idx) => (
+                                    <SuggestionCard 
+                                        key={idx}
+                                        title={`${s.column}: ${s.action.replace('_', ' ')}`}
+                                        description={`Proposed strategy for ${s.column}.`}
+                                        reason={s.reason}
+                                        onAccept={() => applyAISuggestion(s)}
+                                        onReject={() => setAiSuggestions(prev => prev.filter(item => item !== s))}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="bg-slate-900/40 border border-white/5 p-6 rounded-3xl space-y-6">
                         <h3 className="text-lg font-bold text-white flex items-center gap-2">
                             <Settings2 size={18} className="text-blue-400" />
@@ -177,20 +266,6 @@ export const CleaningPage: React.FC = () => {
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Global Missing Strategy</label>
-                                <select 
-                                    value={cleaningConfig.missing_strategy}
-                                    onChange={(e) => setCleaningConfig({...cleaningConfig, missing_strategy: e.target.value})}
-                                    className="w-full bg-slate-800 border border-white/10 text-white p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="mean">Fill with Mean</option>
-                                    <option value="median">Fill with Median</option>
-                                    <option value="mode">Fill with Mode</option>
-                                    <option value="drop">Drop Rows</option>
-                                </select>
-                            </div>
-
                             <label className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl cursor-pointer hover:bg-slate-800 transition-colors">
                                 <input 
                                     type="checkbox" 
@@ -202,21 +277,10 @@ export const CleaningPage: React.FC = () => {
                             </label>
                         </div>
                     </div>
-
-                    <div className="bg-blue-500/5 border border-blue-500/10 p-6 rounded-3xl">
-                        <h4 className="text-blue-400 font-bold mb-2 flex items-center gap-2">
-                            <AlertCircle size={16} />
-                            Cleaning Impact
-                        </h4>
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                            Applied changes will create a new dataset version. Original data remains untouched in cold storage. 
-                            Estimated reduction in data noise: <span className="text-blue-400 font-bold">~14%</span>
-                        </p>
-                    </div>
                 </div>
 
                 {/* Main Data Preview and Column Config */}
-                <div className="xl:col-span-2 space-y-8">
+                <div className="xl:col-span-3 space-y-8">
                     <div className="bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden flex flex-col">
                         <div className="p-6 border-b border-white/5 flex items-center justify-between bg-slate-800/20">
                             <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -242,7 +306,7 @@ export const CleaningPage: React.FC = () => {
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
                                     {preview?.columns?.map((col: any, i: number) => (
-                                        <tr key={i} className={`group hover:bg-white/5 transition-colors ${cleaningConfig.drop_columns.includes(col.name) ? 'opacity-40 grayscale' : ''}`}>
+                                        <tr key={i} className={`group hover:bg-white/5 transition-colors ${cleaningConfig.drop_columns.includes(col.name) ? 'opacity-40 grayscale line-through' : ''}`}>
                                             <td className="py-4 px-6">
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-slate-200">{col.name}</span>
@@ -260,7 +324,7 @@ export const CleaningPage: React.FC = () => {
                                                     value={columnStrategies[col.name] || 'mean'}
                                                     onChange={(e) => setColumnStrategies({...columnStrategies, [col.name]: e.target.value})}
                                                     disabled={cleaningConfig.drop_columns.includes(col.name)}
-                                                    className="bg-slate-800 border border-white/10 text-white text-xs p-1.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500"
+                                                    className="bg-slate-800 border border-white/10 text-white text-xs p-1.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500 transition-all focus:bg-slate-700"
                                                 >
                                                     <option value="mean">Mean</option>
                                                     <option value="median">Median</option>
@@ -287,7 +351,7 @@ export const CleaningPage: React.FC = () => {
                         </div>
                         
                         <div className="p-4 bg-slate-800/30 border-t border-white/5 flex items-center justify-between text-xs text-slate-500">
-                            <span>Showing first 50 rows for performance</span>
+                            <span>Showing first 500 rows for AI precision</span>
                             <div className="flex gap-4">
                                 <button className="flex items-center gap-1 hover:text-white transition-colors disabled:opacity-30" disabled><ChevronLeft size={14} /> Previous</button>
                                 <button className="flex items-center gap-1 hover:text-white transition-colors">Next <ChevronRight size={14} /></button>

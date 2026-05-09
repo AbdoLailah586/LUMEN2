@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lumen_password}
       POSTGRES_DB: ${POSTGRES_DB:-lumen}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -47,7 +47,7 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-lumen_user}:${POSTGRES_PASSWORD:-lumen_password}@postgres:5432/${POSTGRES_DB:-lumen}
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://:lumen_redis_password@redis:6379
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
     volumes:
       - ./backend:/app
@@ -70,7 +70,7 @@ services:
     restart: always
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-lumen_user}:${POSTGRES_PASSWORD:-lumen_password}@postgres:5432/${POSTGRES_DB:-lumen}
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://:lumen_redis_password@redis:6379
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
     volumes:
       - ./backend:/app
