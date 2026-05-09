@@ -27,7 +27,7 @@ class GenericFeatureEngineer:
                     df_out[f'{dt_col}_day'] = df_out[dt_col].dt.day
                     df_out[f'{dt_col}_dayofweek'] = df_out[dt_col].dt.dayofweek
                     df_out = df_out.drop(columns=[dt_col])
-                except exception as e:
+                except Exception as e:
                     df_out = df_out.drop(columns=[dt_col]) # Drop if conversion fails
         
         # 3. Handle Numerical Missing & Scaling
