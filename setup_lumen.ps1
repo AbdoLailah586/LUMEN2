@@ -135,7 +135,7 @@ if ($choice -eq 'Y' -or $choice -eq 'y') {
     Write-Host "Starting services..."
     # Launch backend, frontend, and worker in new windows
     Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd backend; .\venv\Scripts\Activate.ps1; uvicorn app.main:app --reload"
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd backend; .\venv\Scripts\Activate.ps1; celery -A app.core.celery_app worker --loglevel=info -P eventlet"
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd backend; .\venv\Scripts\Activate.ps1; celery -A app.core.celery_app worker --loglevel=info -P solo -Q celery"
     Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd frontend; npm run dev"
     Write-Host "Services and Worker started. Check the new terminal windows."
 }

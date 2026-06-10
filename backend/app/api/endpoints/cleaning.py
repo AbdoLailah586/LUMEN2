@@ -1,21 +1,32 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any, List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-import pandas as pd
 import uuid
 import os
 
 from app.core.database import get_db
 from app.models.dataset import Dataset
+from app.services.cleaning.dataset_loader import (
+    load_dataset_dataframe,
+    build_dataset_summary,
+    compute_preview_changes,
+)
+from app.services.cleaning.fusion_engine import FusionEngine
 
 router = APIRouter()
+
+PREVIEW_SAMPLE_ROWS = 200
+PREVIEW_DISPLAY_ROWS = 8
 
 class CleaningConfig(BaseModel):
     drop_columns: List[str] = []
     missing_strategy: str = "none"
     missing_fill_value: Optional[str] = None
+    column_strategies: Dict[str, str] = {}
+    column_fill_values: Dict[str, str] = {}
+    column_type_conversions: Dict[str, str] = {}
     outlier_method: str = "none"
     outlier_action: str = "clip"
     outlier_threshold: float = 3.0
@@ -23,6 +34,55 @@ class CleaningConfig(BaseModel):
     encoding_method: str = "none"
     drop_duplicates: bool = False
     apply_log_transform: bool = False
+    strip_whitespace: bool = False
+    lowercase_text: bool = False
+
+
+class CleaningPreviewRequest(CleaningConfig):
+    sample_rows: int = Field(default=PREVIEW_SAMPLE_ROWS, ge=10, le=2000)
+
+
+async def _get_dataset_or_404(dataset_id: str, db: AsyncSession) -> Dataset:
+    result = await db.execute(select(Dataset).filter(Dataset.id == dataset_id))
+    dataset = result.scalar_one_or_none()
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    return dataset
+
+
+@router.post("/{dataset_id}/preview")
+async def preview_cleaning(
+    dataset_id: str,
+    config: CleaningPreviewRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Dry-run cleaning on a sample of rows. Returns before/after summaries without saving.
+    """
+    dataset = await _get_dataset_or_404(dataset_id, db)
+
+    try:
+        df = load_dataset_dataframe(dataset, nrows=config.sample_rows)
+        before = build_dataset_summary(df, sample_size=PREVIEW_DISPLAY_ROWS)
+
+        cleaned_df, steps_log = FusionEngine.apply_pipeline(df, config.model_dump())
+        after = build_dataset_summary(cleaned_df, sample_size=PREVIEW_DISPLAY_ROWS)
+        changes = compute_preview_changes(before, after)
+
+        return {
+            "before": before,
+            "after": after,
+            "steps": steps_log,
+            "changes": changes,
+            "preview_note": f"Preview based on first {len(df)} rows of the dataset.",
+        }
+    except Exception as e:
+        import traceback
+        raise HTTPException(
+            status_code=500,
+            detail=f"Preview failed: {str(e)}\n\n{traceback.format_exc()}",
+        )
+
 
 @router.post("/{dataset_id}/apply")
 async def apply_cleaning(
@@ -33,47 +93,14 @@ async def apply_cleaning(
     """
     Applies data cleaning operations to a dataset using pandas.
     """
-    # 1. Fetch the dataset
-    result = await db.execute(select(Dataset).filter(Dataset.id == dataset_id))
-    dataset = result.scalar_one_or_none()
-    
-    if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset not found")
-        
+    dataset = await _get_dataset_or_404(dataset_id, db)
+
     try:
-        # 2. Load the dataset into pandas
-        file_path = dataset.storage_path
+        df = load_dataset_dataframe(dataset)
         file_ext = dataset.file_type
-        
-        if file_ext == 'csv':
-            df = pd.read_csv(file_path)
-        elif file_ext in ['xls', 'xlsx']:
-            df = pd.read_excel(file_path)
-        elif file_ext == 'json':
-            df = pd.read_json(file_path)
-        elif file_ext == 'parquet':
-            df = pd.read_parquet(file_path)
-        elif file_ext == 'xml':
-            df = pd.read_xml(file_path)
-        elif file_ext in ['sqlite', 'db', 'sqlite3']:
-            import sqlite3
-            conn = sqlite3.connect(file_path)
-            query = "SELECT name FROM sqlite_master WHERE type='table';"
-            tables = pd.read_sql_query(query, conn)
-            if not tables.empty:
-                first_table = tables.iloc[0]['name']
-                df = pd.read_sql_query(f"SELECT * FROM {first_table}", conn)
-            else:
-                df = pd.DataFrame()
-            conn.close()
-        else:
-            raise ValueError(f"Unsupported file extension: {file_ext}")
-            
-        # 3. Apply Cleaning Operations
-        from app.services.cleaning.fusion_engine import FusionEngine
         df, steps_log = FusionEngine.apply_pipeline(df, config.model_dump())
-            
-        # 4. Save the Cleaned Dataset
+
+        # Save the Cleaned Dataset
         cleaned_dataset_id = str(uuid.uuid4())
         cleaned_filename = f"{cleaned_dataset_id}_cleaned.{file_ext}"
         cleaned_file_path = os.path.join("uploads", cleaned_filename)

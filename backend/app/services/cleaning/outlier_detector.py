@@ -1,10 +1,29 @@
 import pandas as pd
 import numpy as np
+from sklearn.ensemble import IsolationForest
 
 class OutlierDetector:
     def detect_and_handle(self, df: pd.DataFrame, method: str = "zscore", threshold: float = 3.0, action: str = "clip") -> pd.DataFrame:
         result = df.copy()
         numeric_cols = result.select_dtypes(include=['number']).columns
+
+        if method == "isolation_forest":
+            if len(numeric_cols) == 0:
+                return result
+            X = result[numeric_cols].fillna(result[numeric_cols].median())
+            iso = IsolationForest(contamination=0.05, random_state=42)
+            preds = iso.fit_predict(X)
+            outliers = preds == -1
+            if action == "drop":
+                return result.loc[~outliers].reset_index(drop=True)
+            for col in numeric_cols:
+                Q1 = result[col].quantile(0.25)
+                Q3 = result[col].quantile(0.75)
+                IQR = Q3 - Q1
+                lower = Q1 - 1.5 * IQR
+                upper = Q3 + 1.5 * IQR
+                result.loc[outliers, col] = result.loc[outliers, col].clip(lower=lower, upper=upper)
+            return result
         
         for col in numeric_cols:
             active_method = method

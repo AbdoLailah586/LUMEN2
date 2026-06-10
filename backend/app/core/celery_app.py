@@ -8,13 +8,8 @@ celery_app = Celery(
     include=["app.services.ml.tasks", "app.services.rl.tasks", "app.services.gnn.tasks", "app.services.cv.cv_tasks"]
 )
 
-celery_app.conf.task_routes = {
-    "app.services.ml.*": "ml",
-    "app.services.rl.*": "rl",
-    "app.services.gnn.*": "gnn",
-    "app.services.cleaning.*": "cleaning",
-    "app.services.cv.*": "cv"
-}
+# Use the default "celery" queue so workers pick up tasks without -Q flags.
+celery_app.conf.task_default_queue = "celery"
 
 celery_app.conf.update(
     task_serializer="json",

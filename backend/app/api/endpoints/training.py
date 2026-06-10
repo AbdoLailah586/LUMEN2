@@ -6,7 +6,8 @@ from app.core.database import get_db
 from app.models.job import Job
 from app.models.dataset import Dataset
 from app.models.model import Model as DbModel
-from app.services.ml.tasks import run_training_job
+from app.services.ml.job_dispatch import dispatch_training_job
+from datetime import datetime, timezone
 import uuid
 
 router = APIRouter()
@@ -127,15 +128,25 @@ async def start_training(dataset_id: str, config: Dict[str, Any], db: AsyncSessi
         job_type="training",
         status="pending",
         progress=0.0,
-        config=config
+        config=config,
+        results={
+            "training_log": [{
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "type": "system",
+                "message": "Training job created. Starting worker...",
+            }]
+        },
     )
     db.add(job)
     await db.commit()
-    
-    # Trigger Celery Task
-    run_training_job.delay(job_id)
-    
-    return {"message": "Training job started", "job_id": job_id}
+
+    execution_mode = dispatch_training_job(job_id)
+
+    return {
+        "message": "Training job started",
+        "job_id": job_id,
+        "execution_mode": execution_mode,
+    }
 
 @router.get("/jobs/{id}/status")
 async def get_training_job_status(id: str, db: AsyncSession = Depends(get_db)):
@@ -144,11 +155,14 @@ async def get_training_job_status(id: str, db: AsyncSession = Depends(get_db)):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
         
+    results = job.results or {}
     return {
-        "job_id": str(job.id), 
-        "status": job.status, 
+        "job_id": str(job.id),
+        "status": job.status,
         "progress": job.progress,
-        "error": job.error_message
+        "error": job.error_message,
+        "training_log": results.get("training_log", []),
+        "current_step": results.get("current_step"),
     }
 
 @router.get("/jobs/{id}/results")
@@ -161,13 +175,22 @@ async def get_training_results(id: str, db: AsyncSession = Depends(get_db)):
     if job.status != "completed":
         raise HTTPException(status_code=400, detail="Job is not completed yet")
         
+    results = job.results or {}
     return {
-        "job_id": str(job.id), 
-        "metrics": job.results.get('metrics', {}),
-        "feature_importance": job.results.get('feature_importance', {}),
-        "model_id": job.results.get('model_id'),
-        "task_type": job.config.get('task_type', 'classification'),
-        "confusion_matrix": job.results.get('confusion_matrix')
+        "job_id": str(job.id),
+        "metrics": results.get("metrics", {}),
+        "feature_importance": results.get("feature_importance", {}),
+        "model_id": results.get("model_id"),
+        "task_type": results.get("training_summary", {}).get("task_type")
+        or job.config.get("task_type", "classification"),
+        "confusion_matrix": results.get("confusion_matrix"),
+        "model_comparison": results.get("model_comparison", []),
+        "best_model": results.get("best_model"),
+        "metric_feedback": results.get("metric_feedback", []),
+        "overall_recommendation": results.get("overall_recommendation"),
+        "training_summary": results.get("training_summary", {}),
+        "training_log": results.get("training_log", []),
+        "config": job.config,
     }
 
 @router.get("/models/{dataset_id}")

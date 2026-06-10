@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
@@ -6,6 +6,11 @@ from uuid import UUID
 class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return value.strip().lower()
 
 class UserCreate(UserBase):
     password: str

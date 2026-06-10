@@ -1,10 +1,12 @@
 /// <reference types="vite/client" />
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
+    .replace(/\/api\/?$/, '')
+    .replace(/\/$/, '');
 
 export const apiClient = axios.create({
-    baseURL: `${API_BASE_URL}/api`,
+    baseURL: `${API_ROOT}/api`,
 
     headers: {
         'Accept': 'application/json',
@@ -109,6 +111,11 @@ export const applyCleaning = async (id: string, config: any) => {
     return response.data;
 };
 
+export const previewCleaning = async (id: string, config: any) => {
+    const response = await apiClient.post(`/cleaning/${id}/preview`, config);
+    return response.data;
+};
+
 // Training
 export const startTraining = async (datasetId: string, config: any) => {
     const response = await apiClient.post(`/training/${datasetId}/start`, config);
@@ -141,9 +148,19 @@ export const getModel = async (modelId: string) => {
     return response.data;
 };
 
-export const downloadModel = async (modelId: string) => {
-    const response = await apiClient.get(`/models/${modelId}/download`);
-    return response.data;
+export const downloadModel = async (modelId: string, filename?: string) => {
+    const response = await apiClient.get(`/models/${modelId}/download`, {
+        responseType: 'blob',
+    });
+    const blob = new Blob([response.data], { type: 'application/octet-stream' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename || `model_${modelId}.joblib`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
 };
 
 // Export

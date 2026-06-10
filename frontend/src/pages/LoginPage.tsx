@@ -20,6 +20,16 @@ declare global {
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
+const getErrorMessage = (err: any, fallback: string) => {
+    const detail = err.response?.data?.detail;
+    if (!detail) return fallback;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+        return detail.map((item) => item.msg || item.message || String(item)).join('. ');
+    }
+    return fallback;
+};
+
 const LoginPage = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
@@ -46,7 +56,7 @@ const LoginPage = () => {
                 navigate('/dashboard', { replace: true });
             }
         } catch (err: any) {
-            setError(err.response?.data?.detail || 'Google authentication failed. Please try again.');
+            setError(getErrorMessage(err, 'Google authentication failed. Please try again.'));
         } finally {
             setGoogleLoading(false);
         }
@@ -94,14 +104,21 @@ const LoginPage = () => {
         setError('');
         setLoading(true);
 
+        const trimmedEmail = email.trim();
+        const trimmedPassword = password;
+
         try {
             if (isRegistering) {
-                await register({ email, password, full_name: fullName });
+                await register({
+                    email: trimmedEmail,
+                    password: trimmedPassword,
+                    full_name: fullName.trim(),
+                });
             }
             
             const params = new URLSearchParams();
-            params.append('username', email);
-            params.append('password', password);
+            params.append('username', trimmedEmail);
+            params.append('password', trimmedPassword);
             
             const data = await login(params);
             if (data.access_token) {
@@ -109,7 +126,7 @@ const LoginPage = () => {
                 navigate('/dashboard', { replace: true });
             }
         } catch (err: any) {
-            setError(err.response?.data?.detail || 'Authentication failed. Please check your credentials.');
+            setError(getErrorMessage(err, 'Authentication failed. Please check your credentials.'));
         } finally {
             setLoading(false);
         }
@@ -324,6 +341,7 @@ const LoginPage = () => {
                                 onClick={() => {
                                     setIsRegistering(!isRegistering);
                                     setError('');
+                                    setFullName('');
                                 }}
                                 className="font-semibold text-blue-400 hover:text-blue-300 transition-colors ml-1.5 hover:underline underline-offset-2"
                             >

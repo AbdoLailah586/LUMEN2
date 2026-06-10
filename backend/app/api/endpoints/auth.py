@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 import httpx
 
 from app.core.database import get_db
@@ -15,6 +15,18 @@ from app.core.config import settings
 
 router = APIRouter()
 
+
+def normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+
+async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
+    normalized = normalize_email(email)
+    return await db.scalar(
+        select(User).where(func.lower(User.email) == normalized)
+    )
+
+
 @router.post("/register")
 async def register(
     user_in: UserCreate,
@@ -23,12 +35,11 @@ async def register(
     """
     Create new user.
     """
-    result = await db.execute(select(User).where(User.email == user_in.email))
-    user = result.scalar_one_or_none()
+    user = await get_user_by_email(db, user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
-            detail="The user with this username already exists in the system",
+            detail="An account with this email already exists",
         )
     user = User(
         email=user_in.email,
@@ -48,7 +59,7 @@ async def login_access_token(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    user = await db.scalar(select(User).where(User.email == form_data.username))
+    user = await get_user_by_email(db, form_data.username)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     
@@ -107,9 +118,9 @@ async def login_with_google(
         raise HTTPException(status_code=400, detail="Email not provided by Google")
 
     # Check if user already exists (by google_id or email)
-    user = await db.scalar(
-        select(User).where((User.google_id == google_id) | (User.email == email))
-    )
+    user = await db.scalar(select(User).where(User.google_id == google_id))
+    if not user:
+        user = await get_user_by_email(db, email)
 
     if user:
         # Link google_id if not already linked
