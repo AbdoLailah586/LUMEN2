@@ -159,10 +159,7 @@ const LoginPage = () => {
                 <div className="animate-slide-up">
                     {/* Logo */}
                     <div className="flex items-center gap-4 mb-12">
-                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)]"
-                            style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)' }}>
-                            <span className="font-heading font-bold text-white text-3xl">L</span>
-                        </div>
+                        <img src="/lumen-logo.png" alt="LUMEN Logo" className="w-20 h-20 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
                         <div>
                             <h1 className="text-3xl font-heading font-bold text-white tracking-tight">LUMEN</h1>
                             <p className="text-sm text-blue-400/80 font-medium">AutoML Platform</p>
@@ -199,10 +196,7 @@ const LoginPage = () => {
                 <div className="w-full max-w-[440px] animate-slide-up" style={{ animationDelay: '100ms' }}>
                     {/* Mobile logo */}
                     <div className="lg:hidden text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 shadow-[0_0_30px_rgba(59,130,246,0.5)]"
-                            style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)' }}>
-                            <span className="font-heading font-bold text-white text-3xl">L</span>
-                        </div>
+                        <img src="/lumen-logo.png" alt="LUMEN Logo" className="w-20 h-20 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
                         <h1 className="text-2xl font-heading font-bold text-white">LUMEN</h1>
                     </div>
 

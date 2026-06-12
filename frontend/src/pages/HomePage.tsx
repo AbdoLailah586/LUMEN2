@@ -26,10 +26,7 @@ const HomePage = () => {
             {/* Top Nav Bar */}
             <header className="relative z-20 flex items-center justify-between px-8 lg:px-16 py-6">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.5)]"
-                        style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)' }}>
-                        <span className="font-heading font-bold text-white text-xl">L</span>
-                    </div>
+                    <img src="/lumen-logo.png" alt="LUMEN Logo" className="w-14 h-14 drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
                     <span className="text-xl font-heading font-bold tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300">
                         LUMEN
                     </span>
@@ -169,9 +166,7 @@ const HomePage = () => {
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <p className="text-xs text-gray-600">&copy; {new Date().getFullYear()} LUMEN AutoML Platform. All rights reserved.</p>
                     <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}>
-                            <span className="font-heading font-bold text-white text-xs">L</span>
-                        </div>
+                        <img src="/lumen-logo.png" alt="LUMEN Logo" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]" />
                     </div>
                 </div>
             </footer>

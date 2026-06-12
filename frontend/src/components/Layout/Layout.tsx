@@ -35,9 +35,7 @@ const Layout = () => {
             <aside className="w-64 h-full flex flex-col bg-dark-800/40 backdrop-blur-2xl border-r border-white/5 shrink-0 z-20">
                 {/* Logo */}
                 <div className="p-6 flex items-center gap-3 border-b border-white/5">
-                    <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.6)] animate-pulse-slow">
-                        <span className="font-heading font-bold text-white text-lg">L</span>
-                    </div>
+                    <img src="/lumen-logo.png" alt="LUMEN Logo" className="w-12 h-12 drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                     <span className="text-xl font-heading font-bold tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300">
                         LUMEN
                     </span>
