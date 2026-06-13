@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     # Google OAuth
     GOOGLE_CLIENT_ID: Optional[str] = None
 
+    # MLflow
+    MLFLOW_TRACKING_URI: str = "http://localhost:5000"
+    MLFLOW_EXPERIMENT_NAME: str = "lumen"
 
     class Config:
         env_file = ".env"

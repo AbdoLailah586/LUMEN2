@@ -49,7 +49,9 @@ class RLAgentTrainer:
         """
         self.model = PPO("MlpPolicy", self.env, verbose=1)
         
-        # MLflow Integration
+        from app.core.mlflow_config import configure_mlflow
+
+        configure_mlflow()
         mlflow.set_experiment(experiment_name)
         with mlflow.start_run():
             mlflow.log_param("algorithm", "PPO")

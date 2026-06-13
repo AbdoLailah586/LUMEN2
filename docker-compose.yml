@@ -49,15 +49,17 @@ services:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-lumen_user}:${POSTGRES_PASSWORD:-lumen_password}@postgres:5432/${POSTGRES_DB:-lumen}
       - REDIS_URL=redis://:lumen_redis_password@redis:6379
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - MLFLOW_TRACKING_URI=http://mlflow_server:5000
     volumes:
       - ./backend:/app
       - ./uploads:/app/uploads
-      - ./mlruns:/app/mlruns
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      mlflow_server:
+        condition: service_started
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     networks:
       - lumen_network
@@ -72,15 +74,17 @@ services:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-lumen_user}:${POSTGRES_PASSWORD:-lumen_password}@postgres:5432/${POSTGRES_DB:-lumen}
       - REDIS_URL=redis://:lumen_redis_password@redis:6379
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - MLFLOW_TRACKING_URI=http://mlflow_server:5000
     volumes:
       - ./backend:/app
       - ./uploads:/app/uploads
-      - ./mlruns:/app/mlruns
     depends_on:
       redis:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      mlflow_server:
+        condition: service_started
     command: celery -A app.core.celery_app worker --loglevel=info -Q celery
     networks:
       - lumen_network
@@ -111,7 +115,7 @@ services:
     restart: always
     ports:
       - "5000:5000"
-    command: mlflow server --backend-store-uri sqlite:///mlruns.db --default-artifact-root /mlruns --host 0.0.0.0 --port 5000
+    command: mlflow server --backend-store-uri sqlite:////mlruns/mlruns.db --default-artifact-root /mlruns --host 0.0.0.0 --port 5000
     volumes:
       - ./mlruns:/mlruns
     networks:

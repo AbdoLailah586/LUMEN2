@@ -71,6 +71,9 @@ class GNNAgentTrainer:
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         criterion = torch.nn.CrossEntropyLoss()
         
+        from app.core.mlflow_config import configure_mlflow
+
+        configure_mlflow()
         mlflow.set_experiment(experiment_name)
         with mlflow.start_run():
             mlflow.log_param("epochs", epochs)

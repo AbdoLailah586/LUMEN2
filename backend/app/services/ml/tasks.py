@@ -415,9 +415,11 @@ def run_training_job(self, job_id: str):
             metrics, task_type, model_comparison, best_name
         )
 
-        mlflow.set_tracking_uri("sqlite:///mlruns.db" if os.environ.get("DOCKER_ENV") else "file:./mlruns")
+        from app.core.mlflow_config import configure_mlflow
+
+        configure_mlflow()
         mlflow.set_experiment(f"Experiment_{dataset.original_filename}")
-        with mlflow.start_run(run_name=f"{task_type}_{best_name}_{job_id}"):
+        with mlflow.start_run(run_name=f"{task_type}_{best_name}_{job_id}") as run:
             mlflow.log_params(params)
             mlflow.log_param("best_model", best_name)
             mlflow.log_param("task_type", task_type)
@@ -430,6 +432,7 @@ def run_training_job(self, job_id: str):
             }
             if mlflow_metrics:
                 mlflow.log_metrics(mlflow_metrics)
+            mlflow_run_id = run.info.run_id
 
         model_id = uuid.uuid4()
         model_filename = f"{str(model_id)}.joblib"
@@ -454,6 +457,7 @@ def run_training_job(self, job_id: str):
             parameters=params,
             metrics=metrics,
             storage_path=model_storage_uri,
+            mlflow_run_id=mlflow_run_id,
         )
         db.add(db_model)
 
