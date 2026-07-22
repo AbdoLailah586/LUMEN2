@@ -1,11 +1,6 @@
 # render.yaml — LUMEN Infrastructure as Code for Render.com
+# Uses external Neon (PostgreSQL) + Upstash (Redis) — no Render DB needed.
 # Docs: https://render.com/docs/blueprint-spec
-#
-# HOW TO USE:
-#   1. Push this file to your GitHub repo root.
-#   2. On Render dashboard → "New Blueprint" → connect your repo.
-#   3. Render will create all services automatically.
-#   4. Fill in the secret env vars marked sync:false in the Render dashboard.
 
 services:
   # ── Backend API (FastAPI) ─────────────────────────────────────────────────
@@ -18,29 +13,19 @@ services:
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: lumen-postgres
-          property: connectionString
-        # Render gives a postgres:// URL — convert to asyncpg for SQLAlchemy
-        # The app's database.py handles the conversion automatically.
+        sync: false   # ← Paste your Neon asyncpg URL here in Render dashboard
       - key: REDIS_URL
-        fromService:
-          name: lumen-redis
-          type: redis
-          property: connectionString
+        sync: false   # ← Paste your Upstash rediss:// URL here
       - key: SECRET_KEY
-        generateValue: true     # Render auto-generates a strong random secret
+        generateValue: true
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: MLFLOW_TRACKING_URI
-        value: "sqlite:////tmp/mlruns.db"   # lightweight local SQLite for demo
+        value: "sqlite:////tmp/mlruns.db"
       - key: FRONTEND_URL
-        sync: false             # ← Set this manually after Vercel deploy
-                                #   e.g. https://lumen2.vercel.app
+        sync: false   # ← Set after Vercel deploy (e.g. https://lumen2.vercel.app)
       - key: GEMINI_API_KEY
-        sync: false             # ← Set from Google AI Studio
-      - key: PYTHON_VERSION
-        value: "3.11.0"
+        sync: false   # ← Optional: Google AI Studio key
 
   # ── Celery Worker (background ML tasks) ──────────────────────────────────
   - type: worker
@@ -57,14 +42,9 @@ services:
       --concurrency=1
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: lumen-postgres
-          property: connectionString
+        sync: false   # ← Same Neon URL as above
       - key: REDIS_URL
-        fromService:
-          name: lumen-redis
-          type: redis
-          property: connectionString
+        sync: false   # ← Same Upstash URL as above
       - key: SECRET_KEY
         fromService:
           name: lumen-api
@@ -74,14 +54,3 @@ services:
         value: "sqlite:////tmp/mlruns.db"
       - key: GEMINI_API_KEY
         sync: false
-
-# ── PostgreSQL Database ───────────────────────────────────────────────────
-databases:
-  - name: lumen-postgres
-    plan: free
-    databaseName: lumen
-    user: lumen_user
-
-# ── Redis ─────────────────────────────────────────────────────────────────
-# Render free Redis: add manually from dashboard (New → Redis → free plan)
-# then link it as "lumen-redis" — Render Blueprint doesn't support Redis yet.
