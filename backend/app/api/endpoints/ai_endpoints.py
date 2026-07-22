@@ -6,13 +6,38 @@ import pandas as pd
 import os
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.models.dataset import Dataset
 from app.services.ai.gemini_service import GeminiService
+from app.services.ai.ollama_service import OllamaService
 from app.services.ai.feature_suggester import FeatureSuggester
 from app.services.storage import get_storage_service
 
 router = APIRouter()
-ai_service = GeminiService()
+
+
+def get_ai_service():
+    """
+    Selects AI provider at runtime.
+    Priority:
+      1) settings.LLM_PROVIDER == "ollama" => OllamaService
+      2) settings.LLM_PROVIDER == "gemini" => GeminiService
+      3) fallback: if GEMINI_API_KEY missing => OllamaService
+    """
+    provider = (getattr(settings, "LLM_PROVIDER", "gemini") or "gemini").lower()
+
+    if provider == "ollama":
+        return OllamaService()
+    if provider == "gemini":
+        return GeminiService()
+
+    gemini_key = getattr(settings, "GEMINI_API_KEY", None)
+    if not gemini_key:
+        return OllamaService()
+    return GeminiService()
+
+
+ai_service = get_ai_service()
 feature_suggester = FeatureSuggester(ai_service)
 
 async def get_dataset_sample(dataset_id: str, db: AsyncSession) -> pd.DataFrame:

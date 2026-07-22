@@ -1,0 +1,300 @@
+
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<title>LUMEN – Deployment Hosting Guide</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 32px 16px;
+  }
+  .container { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { color: #57606a; font-size: 13px; margin-bottom: 28px; }
+  h2 { font-size: 16px; font-weight: 700; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
+  h3 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: #3b82d4; }
+
+  /* Alert boxes */
+  .alert { border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; border-right: 4px solid; }
+  .alert-red   { background: #fff0f0; border-color: #e53e3e; color: #c53030; }
+  .alert-yellow{ background: #fffbeb; border-color: #d97706; color: #92400e; }
+  .alert-blue  { background: #eff6ff; border-color: #3b82d4; color: #1e40af; }
+  .alert-green { background: #f0fdf4; border-color: #16a34a; color: #15803d; }
+
+  /* Stack badges */
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .badge {
+    background: #f7f8fa; border: 1px solid #e5e7eb;
+    border-radius: 4px; padding: 2px 10px; font-size: 12px;
+    color: #1f2328; font-weight: 600;
+  }
+  .badge-heavy { background: #fef3c7; border-color: #fbbf24; color: #78350f; }
+  .badge-light { background: #ecfdf5; border-color: #86efac; color: #166534; }
+
+  /* Comparison table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  th { background: #f7f8fa; color: #57606a; font-weight: 600; text-align: right; padding: 8px 10px; border: 1px solid #e5e7eb; font-size: 12px; }
+  td { padding: 8px 10px; border: 1px solid #e5e7eb; vertical-align: top; }
+  tr:nth-child(even) td { background: #f7f8fa; }
+  .yes  { color: #16a34a; font-weight: 700; }
+  .no   { color: #dc2626; font-weight: 700; }
+  .part { color: #d97706; font-weight: 700; }
+
+  /* Cards */
+  .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .card-title { font-weight: 700; font-size: 15px; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
+  .tag-winner  { background: #dcfce7; color: #15803d; }
+  .tag-good    { background: #dbeafe; color: #1d4ed8; }
+  .tag-limited { background: #fef9c3; color: #854d0e; }
+  .tag-no      { background: #fee2e2; color: #b91c1c; }
+
+  /* Steps */
+  .steps { counter-reset: step; list-style: none; margin: 12px 0; }
+  .steps li { counter-increment: step; display: flex; gap: 12px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step);
+    min-width: 24px; height: 24px;
+    background: #3b82d4; color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+  }
+
+  code { font-family: monospace; background: #f7f8fa; border: 1px solid #e5e7eb; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+
+  footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #e5e7eb; text-align: center; color: #57606a; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🚀 LUMEN – دليل الاستضافة والـ Deployment</h1>
+  <div class="subtitle">تحليل متطلبات المشروع واختيار أنسب منصة استضافة مجانية</div>
+
+  
+  <h2>📦 ما الذي يحتويه المشروع؟ (Stack Analysis)</h2>
+  <p>المشروع <strong>ضخم جداً</strong> ويحتاج موارد حقيقية — ليس مجرد موقع ستاتيك أو API بسيط:</p>
+
+  <div class="badges" style="margin-top:12px">
+    <span class="badge badge-heavy">FastAPI (Python)</span>
+    <span class="badge badge-heavy">PostgreSQL</span>
+    <span class="badge badge-heavy">Redis</span>
+    <span class="badge badge-heavy">Celery Workers</span>
+    <span class="badge badge-heavy">MLflow Server</span>
+    <span class="badge badge-heavy">XGBoost / LightGBM / CatBoost</span>
+    <span class="badge badge-heavy">PyTorch + Transformers</span>
+    <span class="badge badge-heavy">SHAP / Optuna</span>
+    <span class="badge badge-heavy">Dask Distributed</span>
+    <span class="badge badge-light">React + Vite (Frontend)</span>
+    <span class="badge badge-light">Nginx</span>
+  </div>
+
+  <div class="alert alert-red" style="margin-top:14px">
+    ⚠️ <strong>ليس مشروعاً عادياً:</strong> يشغّل 6+ containers في نفس الوقت (Postgres, Redis, Backend, Celery, MLflow, Frontend).
+    المتطلبات الأدنى هي <strong>2–4 GB RAM</strong> و<strong>2 vCPU</strong> على الأقل لتشغيله بشكل مستقر.
+  </div>
+
+  
+  <h2>❌ لماذا Vercel غير مناسب؟</h2>
+  <div class="alert alert-red">
+    Vercel مصممة فقط للـ <strong>Frontend</strong> و<strong>Serverless Functions</strong> — لا تدعم Docker, Celery, Redis, أو PostgreSQL بشكل مدمج. لو حاولت ترفع عليها سيفشل تماماً.
+  </div>
+
+  
+  <h2>🏆 مقارنة أفضل منصات الاستضافة</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>المنصة</th>
+        <th>Docker</th>
+        <th>PostgreSQL</th>
+        <th>Redis</th>
+        <th>Free RAM</th>
+        <th>مناسب لـ LUMEN؟</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Render.com</strong></td>
+        <td class="yes">✓</td>
+        <td class="yes">✓ مدمج</td>
+        <td class="yes">✓ مدمج</td>
+        <td>512MB–2GB</td>
+        <td class="part">⚡ جزئي</td>
+      </tr>
+      <tr>
+        <td><strong>Railway.app</strong></td>
+        <td class="yes">✓</td>
+        <td class="yes">✓ مدمج</td>
+        <td class="yes">✓ مدمج</td>
+        <td>8GB (trial $5)</td>
+        <td class="yes">✅ الأفضل</td>
+      </tr>
+      <tr>
+        <td><strong>Fly.io</strong></td>
+        <td class="yes">✓</td>
+        <td class="yes">✓</td>
+        <td class="yes">✓</td>
+        <td>256MB–3GB</td>
+        <td class="part">⚡ جيد</td>
+      </tr>
+      <tr>
+        <td><strong>Koyeb</strong></td>
+        <td class="yes">✓</td>
+        <td class="yes">✓</td>
+        <td class="part">بشكل منفصل</td>
+        <td>512MB</td>
+        <td class="no">✗ محدود</td>
+      </tr>
+      <tr>
+        <td><strong>Vercel</strong></td>
+        <td class="no">✗</td>
+        <td class="no">✗</td>
+        <td class="no">✗</td>
+        <td>Serverless فقط</td>
+        <td class="no">✗ غير مناسب</td>
+      </tr>
+      <tr>
+        <td><strong>Heroku</strong></td>
+        <td class="yes">✓</td>
+        <td class="yes">✓</td>
+        <td class="yes">✓</td>
+        <td>512MB (مدفوع)</td>
+        <td class="no">✗ مكلف</td>
+      </tr>
+    </tbody>
+  </table>
+
+  
+  <h2>🥇 أفضل 3 خيارات مرتبة حسب الأنسب لمشروعك</h2>
+
+  
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">1. Railway.app</span>
+      <span class="tag tag-winner">⭐ الأفضل لـ LUMEN</span>
+    </div>
+    <p>يدعم <code>docker-compose</code> بشكل مباشر تقريباً، فيه PostgreSQL و Redis مدمجين، وعنده $5 trial مجاني يكفيك للتجربة والعرض.</p>
+    <ul style="margin:8px 0 0 16px;font-size:13px">
+      <li>يدعم رفع المشروع من GitHub مباشرة</li>
+      <li>يدعم بيئات متعددة (dev/prod)</li>
+      <li>Dashboard بسيط وسهل جداً</li>
+      <li>يمكنك رفع Backend + Celery Worker كـ services منفصلة</li>
+    </ul>
+    <div class="alert alert-yellow" style="margin-top:10px;font-size:12px">
+      ⚠️ الـ PyTorch + Transformers ممكن يحتاج RAM أكبر من الـ free tier — فكّر في إيقافهم مؤقتاً للـ demo.
+    </div>
+  </div>
+
+  
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">2. Render.com</span>
+      <span class="tag tag-good">✅ خيار قوي</span>
+    </div>
+    <p>مشهور جداً، يدعم Docker، وعنده PostgreSQL مجاني لمدة 90 يوم. الـ free tier بيـ sleep بعد inactivity.</p>
+    <ul style="margin:8px 0 0 16px;font-size:13px">
+      <li>يدعم Web Services + Background Workers (Celery)</li>
+      <li>PostgreSQL مجاني 90 يوم</li>
+      <li>Redis متاح بخطط مدفوعة (أو استخدم Upstash مجاناً)</li>
+      <li>الـ free tier بـ 512MB RAM — قليل لـ LUMEN الكامل</li>
+    </ul>
+  </div>
+
+  
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">3. Fly.io</span>
+      <span class="tag tag-good">✅ خيار تقني ممتاز</span>
+    </div>
+    <p>يدعم Docker بشكل كامل ويعطيك تحكماً أكبر. مناسب لو عندك خبرة بالـ CLI.</p>
+    <ul style="margin:8px 0 0 16px;font-size:13px">
+      <li>Free tier: 3 shared-cpu VMs + 3GB storage</li>
+      <li>Postgres و Redis متاحين</li>
+      <li>يحتاج <code>flyctl</code> CLI وإعداد يدوي أكثر</li>
+    </ul>
+  </div>
+
+  
+  <h2>💡 الاستراتيجية الأذكى لـ LUMEN (Hybrid Free Deployment)</h2>
+  <div class="alert alert-blue">
+    بدل ما تحاول تشغّل كل حاجة في مكان واحد، وزّع الخدمات على منصات مجانية متخصصة:
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>الخدمة</th><th>المنصة المقترحة</th><th>المجاني؟</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Frontend (React)</strong></td>
+        <td>Vercel أو Netlify</td>
+        <td class="yes">✓ مجاني دائماً</td>
+      </tr>
+      <tr>
+        <td><strong>Backend (FastAPI)</strong></td>
+        <td>Railway أو Render</td>
+        <td class="part">Trial / محدود</td>
+      </tr>
+      <tr>
+        <td><strong>PostgreSQL</strong></td>
+        <td>Supabase أو Neon.tech</td>
+        <td class="yes">✓ مجاني</td>
+      </tr>
+      <tr>
+        <td><strong>Redis</strong></td>
+        <td>Upstash.com</td>
+        <td class="yes">✓ مجاني 10k req/day</td>
+      </tr>
+      <tr>
+        <td><strong>Celery Worker</strong></td>
+        <td>Railway (service منفصل)</td>
+        <td class="part">Trial</td>
+      </tr>
+      <tr>
+        <td><strong>MLflow</strong></td>
+        <td>اختياري في demo (يمكن تعطيله)</td>
+        <td class="yes">—</td>
+      </tr>
+    </tbody>
+  </table>
+
+  
+  <h2>📋 خطوات الـ Deployment الموصى بها (Railway)</h2>
+  <ol class="steps">
+    <li>اعمل account على <strong>Railway.app</strong> وربطه بـ GitHub</li>
+    <li>أضف خدمة <strong>PostgreSQL</strong> من Railway dashboard مباشرة</li>
+    <li>أضف خدمة <strong>Redis</strong> من Railway dashboard</li>
+    <li>أضف <strong>New Service → GitHub Repo</strong> واختار <code>backend/</code> مع <code>Dockerfile</code></li>
+    <li>أضف service تانية لـ <strong>Celery Worker</strong> من نفس الـ repo بـ start command مختلف</li>
+    <li>الـ Frontend: ارفعه على <strong>Vercel</strong> (مجاني 100%) وعيّن <code>VITE_API_URL</code> لـ Railway URL</li>
+    <li>عيّن Environment Variables: <code>DATABASE_URL</code>, <code>REDIS_URL</code>, <code>SECRET_KEY</code></li>
+  </ol>
+
+  <div class="alert alert-green" style="margin-top:16px">
+    ✅ <strong>نصيحة للـ Demo:</strong> عطّل <code>PyTorch</code> و<code>Transformers</code> و<code>Ultralytics</code> من <code>requirements.txt</code> مؤقتاً — هيوفر عليك ~3GB RAM وبناء أسرع بكتير.
+  </div>
+
+  
+  <h2>⚡ تحذير: مشكلة الـ Heavy Dependencies</h2>
+  <div class="alert alert-yellow">
+    <strong>PyTorch + torchvision + transformers + ultralytics + stable-baselines3</strong> = أكتر من <strong>5GB</strong> في Docker image. ده هيسبب:
+    <ul style="margin-top:8px;padding-right:16px">
+      <li>Build time طويل جداً (+20 دقيقة)</li>
+      <li>استهلاك RAM عالي جداً حتى بدون استخدام</li>
+      <li>فشل على أي free tier بـ RAM أقل من 4GB</li>
+    </ul>
+    <strong>الحل:</strong> قسّم الـ <code>requirements.txt</code> لـ <code>requirements-core.txt</code> و <code>requirements-ml-heavy.txt</code> وابني image منفصل للـ ML workers.
+  </div>
+
+  <footer>Made with IBM Bob</footer>
+</div>
+</body>
+</html>

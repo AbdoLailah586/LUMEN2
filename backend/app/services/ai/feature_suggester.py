@@ -1,12 +1,11 @@
 import json
-from .gemini_service import GeminiService
 from typing import List, Dict, Any
 
 class FeatureSuggester:
-    def __init__(self, ai_service: GeminiService):
+    def __init__(self, ai_service: Any):
         self.ai = ai_service
 
-    async def suggest_features(self, column_analysis: Dict[str, Any], target: str = None) -> List[Dict[str, Any]]:
+    async def suggest_features(self, column_analysis: Dict[str, Any], target: str | None = None) -> List[Dict[str, Any]]:
         """
         Suggests new features based on existing column semantics.
         """
@@ -35,7 +34,7 @@ class FeatureSuggester:
         ]
         """
         
-        response_text = await self.ai._call_gemini(prompt)
+        response_text = await self.ai._call(prompt)
         try:
             if "```json" in response_text:
                 response_text = response_text.split("```json")[1].split("```")[0]
